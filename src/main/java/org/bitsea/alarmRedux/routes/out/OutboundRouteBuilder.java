@@ -3,7 +3,10 @@ package org.bitsea.alarmRedux.routes.out;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.camel.Exchange;
+import org.apache.camel.ExchangePattern;
 import org.apache.camel.Predicate;
+import org.apache.camel.Processor;
 import org.apache.camel.builder.PredicateBuilder;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.hl7.HL7DataFormat;
@@ -12,7 +15,7 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class OutboundRouteBuilder extends RouteBuilder {
-
+	
 	@Override
 	public void configure() throws Exception {
 		Predicate p1 = header("CamelHL7MessageType").isEqualTo("ADT");
@@ -30,8 +33,8 @@ public class OutboundRouteBuilder extends RouteBuilder {
 		collAddr.add(addr);
 		collAddr.add("9042");
 		collAddr.add("hl7test");
-		
-		from("????").unmarshal(hl7)
+	
+		from("jms:queue:awaitConsuming?disableReplyTo=true").unmarshal(hl7)
 		.choice()
 			.when(isADT)
 				.setHeader("connector", constant(collAddr))
@@ -43,8 +46,7 @@ public class OutboundRouteBuilder extends RouteBuilder {
 				.endChoice()
 			.otherwise()
 				.to("bean:processManager?method=badMessage")
-				.to("bean:processManager?method=generateACK")
-			.end();
+			.end().marshal(hl7);
 			
 		
 	}

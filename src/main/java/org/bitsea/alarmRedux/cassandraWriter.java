@@ -1,5 +1,6 @@
 package org.bitsea.alarmRedux;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -10,8 +11,10 @@ import com.datastax.driver.core.Cluster;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.SimpleStatement;
 
+import ca.uhn.hl7v2.model.v25.message.ACK;
 import ca.uhn.hl7v2.model.v25.message.ADT_A01;
 import ca.uhn.hl7v2.model.v25.message.ORU_R01;
+import ca.uhn.hl7v2.HL7Exception;
 import ca.uhn.hl7v2.model.Message;
 
 
@@ -51,15 +54,16 @@ public class cassandraWriter {
 		session.execute(stmt);
 		
 		Message ack = msg.generateACK();
-		exchange.getIn().setBody(ack);
+		exchange.getOut().setBody(ack);
 	}
+	
 	
 	public void process(Exchange exchange) throws Exception {
 		if (session == null) { connectToSession(exchange);}
 
 		// jetzt kommt das Handling der ORU Nachricht
 		ORU_R01 msg = exchange.getIn().getBody(ORU_R01.class);
-		
+
 		// need the id, patient_id, and the complete text of the message;
 		String idx = msg.getMSH().getMsh10_MessageControlID().getValue();
 		// for 2.3
@@ -73,13 +77,11 @@ public class cassandraWriter {
 		}
 		
 		String msgText = msg.encode();
-		
 		// Input new entry to DB
 		SimpleStatement doThis = new SimpleStatement("INSERT INTO oru_message_by_patient (id, patientid, content) VALUES (?, ?, ?)", idx, pID, msgText);
 		session.execute(doThis);
 		// generate ack and add to msg
 		Message ack = msg.generateACK();
-		
-		exchange.getIn().setBody(ack);
+		exchange.getOut().setBody(ack);
 	}
 }

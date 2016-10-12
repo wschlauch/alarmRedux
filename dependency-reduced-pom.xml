@@ -71,7 +71,9 @@
   </dependencies>
   <properties>
     <hapi.version.stable>2.2</hapi.version.stable>
+    <activemq.version>5.14.1</activemq.version>
     <camel.version>2.17.3</camel.version>
+    <xbean.version>4.5</xbean.version>
   </properties>
 </project>
 
