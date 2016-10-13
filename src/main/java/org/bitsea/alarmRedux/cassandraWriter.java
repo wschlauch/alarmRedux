@@ -54,7 +54,7 @@ public class cassandraWriter {
 		session.execute(stmt);
 		
 		Message ack = msg.generateACK();
-		exchange.getOut().setBody(ack);
+	//	exchange.getOut().setBody(ack);
 	}
 	
 	
@@ -82,6 +82,6 @@ public class cassandraWriter {
 		session.execute(doThis);
 		// generate ack and add to msg
 		Message ack = msg.generateACK();
-		exchange.getOut().setBody(ack);
+		//exchange.getOut().setBody(ack);
 	}
 }

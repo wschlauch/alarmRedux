@@ -13,7 +13,7 @@ public class InboundRouteBuilder2 extends RouteBuilder {
 	@Override
 	public void configure() throws Exception {
 		DataFormat hl7 = new HL7DataFormat();
-		from("mina2:tcp://127.0.0.1:8000??sync=false&codec=#hl7codec")
+		from("mina2:udp://127.0.0.1:8000??sync=false&codec=#hl7codec")
 		    .to("jms:queue:awaitConsuming?disableReplyTo=true").unmarshal(hl7)
 		    .to("bean:processManager?method=generateACK")//.marshal(hl7)
 		.end();
