@@ -1,7 +1,5 @@
 package org.bitsea.alarmRedux;
 
-import java.io.IOException;
-import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
 import org.apache.camel.Exchange;
@@ -11,11 +9,8 @@ import com.datastax.driver.core.Cluster;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.SimpleStatement;
 
-import ca.uhn.hl7v2.model.v25.message.ACK;
 import ca.uhn.hl7v2.model.v25.message.ADT_A01;
 import ca.uhn.hl7v2.model.v25.message.ORU_R01;
-import ca.uhn.hl7v2.HL7Exception;
-import ca.uhn.hl7v2.model.Message;
 
 
 @Component
@@ -28,10 +23,10 @@ public class cassandraWriter {
 	}
 	
 	private void connectToSession(Exchange exchange) {
-			List<String> collAddr = (List<String>) exchange.getIn().getHeader("connector");
-			String ipAddress = collAddr.get(0);
-			int port = Integer.parseInt(collAddr.get(1));
-			String keyspace = collAddr.get(2);
+		//	List<String> collAddr = (List<String>) exchange.getIn().getHeader("connector");
+			String ipAddress = System.getProperty("DBIP");  //collAddr.get(0);
+			int port = Integer.parseInt(System.getProperty("DBPORT"));  //collAddr.get(1));
+			String keyspace = System.getProperty("DBNAME");  //collAddr.get(2);
 
 			final CassandraConnector client = new CassandraConnector();
 			client.connect(ipAddress, port, keyspace);
@@ -53,8 +48,6 @@ public class cassandraWriter {
 		SimpleStatement stmt = new SimpleStatement("INSERT INTO adt_messages (id, patientid, content) VALUES (?, ?, ?)", idx, pID, content);
 		session.execute(stmt);
 		
-		Message ack = msg.generateACK();
-	//	exchange.getOut().setBody(ack);
 	}
 	
 	
@@ -80,8 +73,5 @@ public class cassandraWriter {
 		// Input new entry to DB
 		SimpleStatement doThis = new SimpleStatement("INSERT INTO oru_message_by_patient (id, patientid, content) VALUES (?, ?, ?)", idx, pID, msgText);
 		session.execute(doThis);
-		// generate ack and add to msg
-		Message ack = msg.generateACK();
-		//exchange.getOut().setBody(ack);
 	}
 }

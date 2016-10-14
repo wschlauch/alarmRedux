@@ -1,12 +1,6 @@
 package org.bitsea.alarmRedux.routes.out;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import org.apache.camel.Exchange;
-import org.apache.camel.ExchangePattern;
 import org.apache.camel.Predicate;
-import org.apache.camel.Processor;
 import org.apache.camel.builder.PredicateBuilder;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.hl7.HL7DataFormat;
@@ -28,20 +22,16 @@ public class OutboundRouteBuilder extends RouteBuilder {
 		
 		DataFormat hl7 = new HL7DataFormat();
 		
-		String addr = "127.0.0.1";
-		List<String> collAddr = new ArrayList<String>();
-		collAddr.add(addr);
-		collAddr.add("9042");
-		collAddr.add("hl7test");
+		
 	
 		from("jms:queue:awaitConsuming?disableReplyTo=true").unmarshal(hl7)
 		.choice()
 			.when(isADT)
-				.setHeader("connector", constant(collAddr))
+				//.setHeader("connector", constant(collAddr))
 				.to("bean:cassandraWriter?method=processADT")
 				.endChoice()
 			.when(isORU)
-				.setHeader("connector", constant(collAddr))
+				//.setHeader("connector", constant(collAddr))
 				.to("bean:cassandraWriter?method=process")
 				.endChoice()
 			.otherwise()

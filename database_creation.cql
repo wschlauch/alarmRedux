@@ -1,4 +1,4 @@
-DROP KEYSPACE message_database;
+DROP KEYSPACE IF EXISTS message_database;
 
 CREATE KEYSPACE message_database WITH REPLICATION =  {
 	'class': 'SimpleStrategy',
@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS adt_messages (
 	msgCtrlID text,
 	PatID int,
 	dob text,
-	current 
+	current boolean,
 	PRIMARY KEY (PatID)
 );
 
@@ -26,7 +26,7 @@ CREATE TABLE IF NOT EXISTS alarm_information (
 	msgCtrlID text,
 	PatID int,
 	reason map<text,text>,
-	severness_counter <text,int>,
+	severness_counter map<text,int>,
 	PRIMARY KEY (PatID, msgCtrlID)
 );
 
