@@ -27,15 +27,13 @@ public class OutboundRouteBuilder extends RouteBuilder {
 		from("jms:queue:awaitConsuming?disableReplyTo=true").unmarshal(hl7)
 		.choice()
 			.when(isADT)
-				//.setHeader("connector", constant(collAddr))
 				.to("bean:cassandraWriter?method=processADT")
 				.endChoice()
 			.when(isORU)
-				//.setHeader("connector", constant(collAddr))
 				.to("bean:cassandraWriter?method=process")
 				.endChoice()
 			.otherwise()
-				.to("bean:processManager?method=badMessage")
+				.to("bean:processManager?method=badMessage").endChoice()
 			.end().marshal(hl7);
 			
 		

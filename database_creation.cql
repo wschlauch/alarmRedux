@@ -9,8 +9,8 @@ use message_database;
 CREATE TABLE IF NOT EXISTS oru_messages (
 	msgCtrlID text,
 	PatID int,
-	numeric map<text,int>,
-	textual map<text,text>,
+	numeric map<text, float>,
+	textual map<text, text>,
 	PRIMARY KEY (PatID, msgCtrlID)
 );
 
@@ -25,20 +25,16 @@ CREATE TABLE IF NOT EXISTS adt_messages (
 CREATE TABLE IF NOT EXISTS alarm_information (
 	msgCtrlID text,
 	PatID int,
-	reason map<text,text>,
-	severness_counter map<text,int>,
+	reason map<text, text>,
+	severness_counter map<text, int>,
 	PRIMARY KEY (PatID, msgCtrlID)
 );
 
-CREATE TYPE message_database.boundaries (
-	lower int,
-	upper int
-);
 
 CREATE TABLE IF NOT EXISTS patient_standard_values (
-	msgCtrlID text,
+	tstamp timestamp,
 	PatID int,
-	parameters map<text, frozen <boundaries>>,
+	parameters map<text, frozen <tuple<float,float>>>,
 	current boolean,
 	PRIMARY KEY (PatId)
 );

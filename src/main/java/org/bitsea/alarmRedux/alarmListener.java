@@ -44,7 +44,7 @@ public class alarmListener {
 			formatter.printHelp("Tipps", options);
 			System.exit(1);
 		}
-		System.out.println("HERE");
+
 		System.setProperty("PORT", line.getOptionValue("PORT", "8000") );
 		System.setProperty("ADTPORT", line.getOptionValue("adt", "22400"));
 		System.setProperty("MINAHOST", line.getOptionValue("ip", "127.0.0.1"));
