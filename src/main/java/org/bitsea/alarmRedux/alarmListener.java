@@ -7,6 +7,8 @@ import org.apache.activemq.ActiveMQConnectionFactory;
 import org.apache.activemq.broker.BrokerFactory;
 import org.apache.activemq.broker.BrokerService;
 import org.apache.camel.component.hl7.HL7MLLPCodec;
+import org.apache.camel.component.hl7.HL7MLLPNettyDecoderFactory;
+import org.apache.camel.component.hl7.HL7MLLPNettyEncoderFactory;
 import org.apache.camel.component.jms.JmsComponent;
 import org.apache.camel.main.Main;
 import org.apache.commons.cli.CommandLine;
@@ -65,6 +67,8 @@ public class alarmListener {
 		main = new Main();
 		
 		main.bind("hl7codec", new HL7MLLPCodec());
+		main.bind("hl7decoder", new HL7MLLPNettyDecoderFactory());
+		main.bind("hl7encoder", new HL7MLLPNettyEncoderFactory());
 		main.enableHangupSupport();
 		
 		final BrokerService jmsService = BrokerFactory.createBroker(new URI("broker:" + URI));

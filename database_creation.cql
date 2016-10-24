@@ -19,6 +19,7 @@ CREATE TABLE IF NOT EXISTS adt_messages (
 	PatID int,
 	dob text,
 	current boolean,
+	bedInformation text,
 	PRIMARY KEY (PatID)
 );
 
@@ -39,4 +40,8 @@ CREATE TABLE IF NOT EXISTS patient_standard_values (
 	PRIMARY KEY (PatId)
 );
 
-
+CREATE TABLE IF NOT EXISTS patient_bed (
+	PatID int,
+	bedInformation text,
+	PRIMARY KEY (PatID, bedInformation)
+);

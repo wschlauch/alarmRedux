@@ -16,6 +16,8 @@ import com.datastax.driver.core.PreparedStatement;
 import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
+import com.datastax.driver.core.SimpleStatement;
+import com.datastax.driver.core.Statement;
 import com.datastax.driver.core.TupleType;
 import com.datastax.driver.core.TupleValue;
 import com.datastax.driver.core.querybuilder.Insert;
@@ -71,22 +73,45 @@ public class cassandraWriter {
 		
 		String mId = terse.get("/.MSH-10");
 		String PatID = terse.get("/.PID-3-1");
+		String bedNR = terse.get("/.PV1-3");
 		if (PatID == null) {
-			PatID = Integer.toString(ThreadLocalRandom.current().nextInt(1000, 9999));
+			Statement bedPatientId = QueryBuilder.select("PatID").from("patient_bed").where(QueryBuilder.eq("bed_information", bedNR));
+			PatID = session.execute(bedPatientId).one().getString("PatID");
 		}
 		
 		int PatID2 = Integer.parseInt(PatID);
 		String dob = terse.get("/.PID-7");
 		boolean current = true;
 		
-		// set all former messages for this patient to false
-	//	PreparedStatement ps = session.prepare("UPDATE adt_messages SET current = false WHERE PatID = ?");
-		BoundStatement bs = new BoundStatement(psCache.get("adtChangeCurrent"));
-		session.executeAsync(bs.bind(PatID2));
-		
-		
-		insert.value("PatID", PatID2).value("msgCtrlID", mId).value("dob", dob).value("current", current);
+		insert.value("PatID", PatID2).value("msgCtrlID", mId).value("dob", dob).value("current", current).value("bedLocation", bedNR);
 		session.executeAsync(insert);
+		
+		Insert bedInformation = QueryBuilder.insertInto("patient_bed").value("bedInformation", bedNR).value("PatID", PatID2);
+		session.executeAsync(bedInformation);
+	}
+	
+	
+	public void processA03(Exchange exchange) throws Exception {
+		if (session==null) {connectToSession();}
+		
+		Message msg = exchange.getIn().getBody(Message.class);
+		Terser terse = new Terser(msg);
+		
+		String pid = terse.get("/.PID-3-1");
+		String bedInfo = terse.get("/.PV1-3");
+		
+		int patID = Integer.parseInt(pid);
+		// get old adt information and make invalid
+		BoundStatement changeADTInfo = new BoundStatement(psCache.get("adtChangeCurrent"));
+		changeADTInfo.setInt("p", patID);
+		session.executeAsync(changeADTInfo);
+		
+		// remove patient from bed and set bed free (i.e., delete the patient)
+		// TODO: decide whether to delete or only mark as not current s.t. later less to enter
+		Statement deleteBedInfo = QueryBuilder.delete().from("patient_bed").where(QueryBuilder.eq("bedInformation", bedInfo)).and(QueryBuilder.eq("PatID", patID));
+		session.execute(deleteBedInfo);
+
+		
 	}
 	
 	
@@ -95,9 +120,7 @@ public class cassandraWriter {
 		HashMap<String, Integer> severness = new HashMap<String, Integer>();
 		
 		Terser terse = new Terser(msg_content);
-		
-		//Insert insert = QueryBuilder.insertInto("alarm_information").value("msgCtrlId", MesID).value("PatID", Integer.parseInt(PatID));
-		
+				
 		boolean looping = true;
 		int i = 0;
 		while (looping) {
@@ -190,7 +213,7 @@ public class cassandraWriter {
 		Map<String, TupleValue> newMapping = new HashMap<String, TupleValue>();
 		boolean changed = false;
 		
-		TupleType boundaryType = session.getCluster().getMetadata().newTupleType(DataType.cfloat(), DataType.cfloat());
+//		TupleType boundaryType = session.getCluster().getMetadata().newTupleType(DataType.cfloat(), DataType.cfloat());
 		if (!oldValues.isExhausted()) {
 			for (Row row: oldValues) {
 				Map<?, ?> old = row.getMap("parameters", String.class, TupleValue.class);
@@ -245,8 +268,12 @@ public class cassandraWriter {
 		
 		String pID = terse.get("/.PID-3-1");
 		if (pID == null) {
-			// input some form of random integer ID with 4 places
-			pID = Integer.toString(ThreadLocalRandom.current().nextInt(1000, 9999));
+			// get it from his bedID if possible
+			String bedInfo = terse.get("/.PV1-3");
+			Statement bedSelect = QueryBuilder.select("PatID").from("patient_bed").where(QueryBuilder.eq("bedInformation", bedInfo));
+			ResultSet rs = session.execute(bedSelect);
+			pID = Integer.toString(rs.one().getInt("PatID"));
+			
 		}
 		int pID2 = Integer.parseInt(pID);
 		

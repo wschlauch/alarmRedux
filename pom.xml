@@ -28,6 +28,11 @@ http://maven.apache.org/maven-v4_0_0.xsd">
             <version>${camel.version}</version>
         </dependency>
         <dependency>
+    		<groupId>org.apache.camel</groupId>
+    		<artifactId>camel-netty4</artifactId>
+    		<version>${camel.version}</version>
+    	</dependency>
+        <dependency>
             <groupId>org.apache.camel</groupId>
             <artifactId>camel-spring</artifactId>
             <version>${camel.version}</version>

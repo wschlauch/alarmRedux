@@ -16,6 +16,9 @@ public class OutboundRouteBuilder extends RouteBuilder {
 		Predicate p2 = header("CamelHL7TriggerEvent").isEqualTo("A01");
 		Predicate isADT = PredicateBuilder.and(p1, p2);
 		
+		Predicate p3 = header("CamelHL7TriggerEvent").isEqualTo("A03");
+		Predicate isA03 = PredicateBuilder.and(p1, p3);
+		
 		Predicate p21 = header("CamelHL7MessageType").isEqualTo("ORU");
 		Predicate p22 = header("CamelHL7TriggerEvent").isEqualTo("R01");
 		Predicate isORU = PredicateBuilder.and(p21, p22);
@@ -24,16 +27,20 @@ public class OutboundRouteBuilder extends RouteBuilder {
 		
 		
 	
-		from("jms:queue:awaitConsuming?disableReplyTo=true").unmarshal(hl7)
+		from("jms:queue:awaitConsuming?disableReplyTo=true").unmarshal().hl7(false)
 		.choice()
 			.when(isADT)
 				.to("bean:cassandraWriter?method=processADT")
+				.endChoice()
+			.when(isA03)
+				.to("bean:cassandraWriter?method=processA03")
 				.endChoice()
 			.when(isORU)
 				.to("bean:cassandraWriter?method=process")
 				.endChoice()
 			.otherwise()
-				.to("bean:processManager?method=badMessage").endChoice()
+				.to("bean:processManager?method=badMessage")
+				.endChoice()
 			.end().marshal(hl7);
 			
 		
