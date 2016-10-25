@@ -4,7 +4,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.concurrent.ThreadLocalRandom;
+
 
 import org.apache.camel.Exchange;
 import org.springframework.stereotype.Component;
@@ -16,7 +16,6 @@ import com.datastax.driver.core.PreparedStatement;
 import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
-import com.datastax.driver.core.SimpleStatement;
 import com.datastax.driver.core.Statement;
 import com.datastax.driver.core.TupleType;
 import com.datastax.driver.core.TupleValue;
@@ -48,9 +47,9 @@ public class cassandraWriter {
 			final CassandraConnector client = new CassandraConnector();
 			client.connect(ipAddress, port, keyspace);
 			session = client.getSession();			
-			PreparedStatement ps_adtChangeCurrent = session.prepare(QueryBuilder.update("adt_messages").with(QueryBuilder.set("current", false)).where(QueryBuilder.eq("PatID", QueryBuilder.bindMarker("p"))));
-			PreparedStatement ps_insertNewORU = session.prepare(QueryBuilder.insertInto("oru_messages").value("PatID", QueryBuilder.bindMarker("p")).value("msgCtrlID", QueryBuilder.bindMarker("m")).value("numeric", QueryBuilder.bindMarker("n")).value("textual", QueryBuilder.bindMarker("t")));
-			PreparedStatement ps_insertAlarm = session.prepare(QueryBuilder.insertInto("alarm_information").value("PatID", QueryBuilder.bindMarker("p")).value("msgCtrlID", QueryBuilder.bindMarker("m")).value("reason", QueryBuilder.bindMarker("r")).value("severness_counter", QueryBuilder.bindMarker("s")));
+			PreparedStatement ps_adtChangeCurrent = session.prepare(QueryBuilder.update("adt_messages").with(QueryBuilder.set("current", false)).and(QueryBuilder.set("tstamp", QueryBuilder.bindMarker("time"))).where(QueryBuilder.eq("PatID", QueryBuilder.bindMarker("p"))));
+			PreparedStatement ps_insertNewORU = session.prepare(QueryBuilder.insertInto("oru_messages").value("PatID", QueryBuilder.bindMarker("p")).value("msgCtrlID", QueryBuilder.bindMarker("m")).value("numeric", QueryBuilder.bindMarker("n")).value("textual", QueryBuilder.bindMarker("t")).value("tstamp", QueryBuilder.bindMarker("time")));
+			PreparedStatement ps_insertAlarm = session.prepare(QueryBuilder.insertInto("alarm_information").value("PatID", QueryBuilder.bindMarker("p")).value("msgCtrlID", QueryBuilder.bindMarker("m")).value("reason", QueryBuilder.bindMarker("r")).value("severness_counter", QueryBuilder.bindMarker("s")).value("tstamp", QueryBuilder.bindMarker("time")));
 			psCache.put("adtChangeCurrent", ps_adtChangeCurrent);
 			psCache.put("oruInsert", ps_insertNewORU);
 			psCache.put("insertAlarm", ps_insertAlarm);
@@ -58,7 +57,7 @@ public class cassandraWriter {
 			psCache.put("getPatientValues", ps_getPatientWithID);
 			PreparedStatement ps_setOldPSVInvalid = session.prepare(QueryBuilder.update("patient_standard_values").with(QueryBuilder.set("current", false)).where(QueryBuilder.eq("PatID", QueryBuilder.bindMarker("PatID"))));
 			psCache.put("setPSVInvalid", ps_setOldPSVInvalid);
-			PreparedStatement ps_updatePSV = session.prepare(QueryBuilder.insertInto("patient_standard_values").value("PatID", QueryBuilder.bindMarker("id")).value("parameters", QueryBuilder.bindMarker("para")).value("current", true).value("tstamp", QueryBuilder.bindMarker()));
+			PreparedStatement ps_updatePSV = session.prepare(QueryBuilder.insertInto("patient_standard_values").value("PatID", QueryBuilder.bindMarker("id")).value("parameters", QueryBuilder.bindMarker("para")).value("current", true).value("tstamp", QueryBuilder.bindMarker("time")));
 			psCache.put("updatePatientStandardValues", ps_updatePSV);
 	}
 	
@@ -78,15 +77,17 @@ public class cassandraWriter {
 			Statement bedPatientId = QueryBuilder.select("PatID").from("patient_bed").where(QueryBuilder.eq("bed_information", bedNR));
 			PatID = session.execute(bedPatientId).one().getString("PatID");
 		}
-		
+		String pointOfCare = bedNR.split("^")[0];
 		int PatID2 = Integer.parseInt(PatID);
 		String dob = terse.get("/.PID-7");
 		boolean current = true;
 		
 		insert.value("PatID", PatID2).value("msgCtrlID", mId).value("dob", dob).value("current", current).value("bedLocation", bedNR);
+		insert.value("tstamp", new Date().getTime());
 		session.executeAsync(insert);
 		
-		Insert bedInformation = QueryBuilder.insertInto("patient_bed").value("bedInformation", bedNR).value("PatID", PatID2);
+		Insert bedInformation = QueryBuilder.insertInto("patient_bed_station").value("bedInformation", bedNR).value("PatID", PatID2);
+		bedInformation.value("station", pointOfCare);
 		session.executeAsync(bedInformation);
 	}
 	
@@ -104,6 +105,7 @@ public class cassandraWriter {
 		// get old adt information and make invalid
 		BoundStatement changeADTInfo = new BoundStatement(psCache.get("adtChangeCurrent"));
 		changeADTInfo.setInt("p", patID);
+		changeADTInfo.setString("time", ""+System.currentTimeMillis());
 		session.executeAsync(changeADTInfo);
 		
 		// remove patient from bed and set bed free (i.e., delete the patient)
@@ -143,6 +145,7 @@ public class cassandraWriter {
 		bs.setMap("r", alarmReasons);
 		bs.setMap("s", severness);
 		bs.setInt("p", PatID);
+		bs.setString("time", ""+System.currentTimeMillis());
 		session.executeAsync(bs);
 	}
 
@@ -197,7 +200,7 @@ public class cassandraWriter {
 		BoundStatement insert = new BoundStatement(psCache.get("updatePatientStandardValues"));
 		insert.setInt("id", PatID);
 		insert.setMap("para", mapping);
-		insert.setTimestamp("tstamp", new Date());
+		insert.setString("time", ""+System.currentTimeMillis());
 		
 		session.executeAsync(insert);
 		
@@ -252,7 +255,7 @@ public class cassandraWriter {
 			BoundStatement bs = new BoundStatement(psCache.get("updatePatientStandardValues"));
 			bs.setMap("para", newMapping);
 			bs.setInt("id", PatID);
-			bs.setTimestamp("tstamp", new Date());
+			bs.setString("tstamp", ""+System.currentTimeMillis());
 			session.executeAsync(bs);
 		}
 	}
@@ -324,6 +327,7 @@ public class cassandraWriter {
 		insert.setString("m", idx);
 		insert.setMap("n", numerics);
 		insert.setMap("t", textual);
+		insert.setString("time", ""+System.currentTimeMillis());
 		
  		session.executeAsync(insert);
  		

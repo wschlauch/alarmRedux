@@ -7,6 +7,7 @@ CREATE KEYSPACE message_database WITH REPLICATION =  {
 
 use message_database;
 CREATE TABLE IF NOT EXISTS oru_messages (
+	tstamp text,
 	msgCtrlID text,
 	PatID int,
 	numeric map<text, float>,
@@ -15,6 +16,7 @@ CREATE TABLE IF NOT EXISTS oru_messages (
 );
 
 CREATE TABLE IF NOT EXISTS adt_messages (
+	tstamp text,
 	msgCtrlID text,
 	PatID int,
 	dob text,
@@ -24,6 +26,7 @@ CREATE TABLE IF NOT EXISTS adt_messages (
 );
 
 CREATE TABLE IF NOT EXISTS alarm_information (
+	tstamp text,
 	msgCtrlID text,
 	PatID int,
 	reason map<text, text>,
@@ -33,15 +36,16 @@ CREATE TABLE IF NOT EXISTS alarm_information (
 
 
 CREATE TABLE IF NOT EXISTS patient_standard_values (
-	tstamp timestamp,
+	tstamp text,
 	PatID int,
 	parameters map<text, frozen <tuple<float,float>>>,
 	current boolean,
 	PRIMARY KEY (PatId)
 );
 
-CREATE TABLE IF NOT EXISTS patient_bed (
+CREATE TABLE IF NOT EXISTS patient_bed_station (
 	PatID int,
 	bedInformation text,
-	PRIMARY KEY (PatID, bedInformation)
+	station text,
+	PRIMARY KEY (PatID, bedInformation, station)
 );
