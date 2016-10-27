@@ -29,7 +29,7 @@ CREATE TABLE IF NOT EXISTS alarm_information (
 	tstamp text,
 	msgCtrlID text,
 	PatID int,
-	reason map<text, text>,
+	reason set<text>,
 	severness_counter map<text, int>,
 	PRIMARY KEY (PatID, msgCtrlID)
 );
@@ -40,7 +40,7 @@ CREATE TABLE IF NOT EXISTS patient_standard_values (
 	PatID int,
 	parameters map<text, frozen <tuple<float,float>>>,
 	current boolean,
-	PRIMARY KEY (PatId)
+	PRIMARY KEY (PatId, tstamp)
 );
 
 CREATE TABLE IF NOT EXISTS patient_bed_station (

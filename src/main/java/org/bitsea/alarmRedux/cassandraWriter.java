@@ -1,7 +1,11 @@
 package org.bitsea.alarmRedux;
 
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
@@ -53,9 +57,9 @@ public class cassandraWriter {
 			psCache.put("adtChangeCurrent", ps_adtChangeCurrent);
 			psCache.put("oruInsert", ps_insertNewORU);
 			psCache.put("insertAlarm", ps_insertAlarm);
-			PreparedStatement ps_getPatientWithID = session.prepare(QueryBuilder.select("parameters").from("patient_standard_values").allowFiltering().where(QueryBuilder.eq("PatID", QueryBuilder.bindMarker("id"))).and(QueryBuilder.eq("current", true)));
+			PreparedStatement ps_getPatientWithID = session.prepare(QueryBuilder.select("parameters", "tstamp").from("patient_standard_values").allowFiltering().where(QueryBuilder.eq("PatID", QueryBuilder.bindMarker("id"))).and(QueryBuilder.eq("current", true)));
 			psCache.put("getPatientValues", ps_getPatientWithID);
-			PreparedStatement ps_setOldPSVInvalid = session.prepare(QueryBuilder.update("patient_standard_values").with(QueryBuilder.set("current", false)).where(QueryBuilder.eq("PatID", QueryBuilder.bindMarker("PatID"))));
+			PreparedStatement ps_setOldPSVInvalid = session.prepare(QueryBuilder.update("patient_standard_values").with(QueryBuilder.set("current", false)).where(QueryBuilder.eq("PatID", QueryBuilder.bindMarker("PatID"))).and(QueryBuilder.eq("tstamp", QueryBuilder.bindMarker("time"))));
 			psCache.put("setPSVInvalid", ps_setOldPSVInvalid);
 			PreparedStatement ps_updatePSV = session.prepare(QueryBuilder.insertInto("patient_standard_values").value("PatID", QueryBuilder.bindMarker("id")).value("parameters", QueryBuilder.bindMarker("para")).value("current", true).value("tstamp", QueryBuilder.bindMarker("time")));
 			psCache.put("updatePatientStandardValues", ps_updatePSV);
@@ -118,7 +122,8 @@ public class cassandraWriter {
 	
 	
 	public void processAsAlarm(String MesID, int PatID, Message msg_content, int nrOBX) throws HL7Exception {
-		HashMap<String, String> alarmReasons = new HashMap<String, String>();
+//		HashMap<String, String> alarmReasons = new HashMap<String, String>();
+		List<String> alarmReasons = new LinkedList<String>();
 		HashMap<String, Integer> severness = new HashMap<String, Integer>();
 		
 		Terser terse = new Terser(msg_content);
@@ -131,7 +136,7 @@ public class cassandraWriter {
 				if (ending.toLowerCase().contains("alert")) {
 					String name = terse.get("/.OBSERVATION(" + i + ")/OBX-3-2");
 					String value = terse.get("/.OBSERVATION(" + i + ")/OBX-5");
-					alarmReasons.put(name, value);
+					alarmReasons.add(value);
 					severness.put(name, severness.getOrDefault(name, 0) + 1);
 				}
 				i++;
@@ -142,7 +147,7 @@ public class cassandraWriter {
 		
 		BoundStatement bs = new BoundStatement(psCache.get("insertAlarm"));
 		bs.setString("m", MesID);
-		bs.setMap("r", alarmReasons);
+		bs.setList("r", alarmReasons);
 		bs.setMap("s", severness);
 		bs.setInt("p", PatID);
 		bs.setString("time", ""+System.currentTimeMillis());
@@ -215,11 +220,12 @@ public class cassandraWriter {
 		
 		Map<String, TupleValue> newMapping = new HashMap<String, TupleValue>();
 		boolean changed = false;
-		
+		List<Long> oldTimestamps = new LinkedList<Long>();
 //		TupleType boundaryType = session.getCluster().getMetadata().newTupleType(DataType.cfloat(), DataType.cfloat());
 		if (!oldValues.isExhausted()) {
 			for (Row row: oldValues) {
-				Map<?, ?> old = row.getMap("parameters", String.class, TupleValue.class);
+				oldTimestamps.add(Long.parseLong(row.getString("tstamp")));
+				Map<String, TupleValue> old = row.getMap("parameters", String.class, TupleValue.class);
 				for (Entry<String, String> e: trueBorders.entrySet()) {
 					TupleValue bounds;
 					String key = e.getKey();
@@ -235,6 +241,7 @@ public class cassandraWriter {
 						float oldHigh = v.getFloat(1);
 						if (bounds.getFloat(0) != oldLow || bounds.getFloat(1) != oldHigh) {
 							newMapping.put(key, bounds);
+							changed = true;
 						} else {
 							newMapping.put(key, v);
 						}
@@ -250,12 +257,14 @@ public class cassandraWriter {
 		if (changed){
 			BoundStatement changeOld = new BoundStatement(psCache.get("setPSVInvalid"));
 			changeOld.setInt("PatID", PatID);
+			long max = Collections.max(oldTimestamps);
+			changeOld.setString("time", ""+max);
 			session.execute(changeOld);
-		
+
 			BoundStatement bs = new BoundStatement(psCache.get("updatePatientStandardValues"));
 			bs.setMap("para", newMapping);
 			bs.setInt("id", PatID);
-			bs.setString("tstamp", ""+System.currentTimeMillis());
+			bs.setString("time", ""+System.currentTimeMillis());
 			session.executeAsync(bs);
 		}
 	}
