@@ -1,14 +1,12 @@
 package org.bitsea.alarmRedux;
 
+import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-
 
 import org.apache.camel.Exchange;
 import org.springframework.stereotype.Component;
@@ -25,11 +23,14 @@ import com.datastax.driver.core.TupleType;
 import com.datastax.driver.core.TupleValue;
 import com.datastax.driver.core.querybuilder.Insert;
 import com.datastax.driver.core.querybuilder.QueryBuilder;
-
+import com.datastax.driver.core.querybuilder.Update;
+import com.datastax.driver.core.querybuilder.Update.Assignments;
 
 import ca.uhn.hl7v2.HL7Exception;
-import ca.uhn.hl7v2.model.Message;
-import ca.uhn.hl7v2.util.Terser;
+import io.netty.util.internal.ThreadLocalRandom;
+
+import org.bitsea.alarmRedux.MessageDecoder;
+
 
 @Component
 public class cassandraWriter {
@@ -50,48 +51,90 @@ public class cassandraWriter {
 
 			final CassandraConnector client = new CassandraConnector();
 			client.connect(ipAddress, port, keyspace);
-			session = client.getSession();			
-			PreparedStatement ps_adtChangeCurrent = session.prepare(QueryBuilder.update("adt_messages").with(QueryBuilder.set("current", false)).and(QueryBuilder.set("tstamp", QueryBuilder.bindMarker("time"))).where(QueryBuilder.eq("PatID", QueryBuilder.bindMarker("p"))));
-			PreparedStatement ps_insertNewORU = session.prepare(QueryBuilder.insertInto("oru_messages").value("PatID", QueryBuilder.bindMarker("p")).value("msgCtrlID", QueryBuilder.bindMarker("m")).value("numeric", QueryBuilder.bindMarker("n")).value("textual", QueryBuilder.bindMarker("t")).value("tstamp", QueryBuilder.bindMarker("time")));
-			PreparedStatement ps_insertAlarm = session.prepare(QueryBuilder.insertInto("alarm_information").value("PatID", QueryBuilder.bindMarker("p")).value("msgCtrlID", QueryBuilder.bindMarker("m")).value("reason", QueryBuilder.bindMarker("r")).value("severness_counter", QueryBuilder.bindMarker("s")).value("tstamp", QueryBuilder.bindMarker("time")));
+			session = client.getSession();	
+			
+			PreparedStatement ps_adtChangeCurrent = session.prepare(
+					QueryBuilder.update("adt_messages")
+					.with(QueryBuilder.set("current", false))
+					.and(QueryBuilder.set("receivedTime", QueryBuilder.bindMarker("time")))
+					.where(QueryBuilder.eq("PatID", QueryBuilder.bindMarker("p"))));
+			PreparedStatement ps_insertNewORU = session.prepare(QueryBuilder.insertInto("oru_messages")
+					.value("PatID", QueryBuilder.bindMarker("p"))
+					.value("msgCtrlID", QueryBuilder.bindMarker("m"))
+					.value("numeric", QueryBuilder.bindMarker("n"))
+					.value("textual", QueryBuilder.bindMarker("t"))
+					.value("receivedTime", QueryBuilder.bindMarker("time"))
+					.value("bedInformation", QueryBuilder.bindMarker("bed"))
+					.value("sendTime", QueryBuilder.bindMarker("send"))
+					.value("visitNumber", QueryBuilder.bindMarker("visit"))
+					.value("abnormal", QueryBuilder.bindMarker("abnormal")));
+			PreparedStatement ps_insertAlarm = session.prepare(
+					QueryBuilder.insertInto("alarm_information")
+					.value("PatID", QueryBuilder.bindMarker("p"))
+					.value("msgCtrlID", QueryBuilder.bindMarker("m"))
+					.value("reason", QueryBuilder.bindMarker("r"))
+					.value("severness_counter", QueryBuilder.bindMarker("s"))
+					.value("receivedTime", QueryBuilder.bindMarker("time")));
 			psCache.put("adtChangeCurrent", ps_adtChangeCurrent);
 			psCache.put("oruInsert", ps_insertNewORU);
 			psCache.put("insertAlarm", ps_insertAlarm);
-			PreparedStatement ps_getPatientWithID = session.prepare(QueryBuilder.select("parameters", "tstamp").from("patient_standard_values").allowFiltering().where(QueryBuilder.eq("PatID", QueryBuilder.bindMarker("id"))).and(QueryBuilder.eq("current", true)));
+			PreparedStatement ps_getPatientWithID = session.prepare(
+					QueryBuilder.select("parameters", "sendTime")
+					.from("patient_standard_values").allowFiltering()
+					.where(QueryBuilder.eq("PatID", QueryBuilder.bindMarker("id")))
+					.and(QueryBuilder.eq("current", true)));
 			psCache.put("getPatientValues", ps_getPatientWithID);
-			PreparedStatement ps_setOldPSVInvalid = session.prepare(QueryBuilder.update("patient_standard_values").with(QueryBuilder.set("current", false)).where(QueryBuilder.eq("PatID", QueryBuilder.bindMarker("PatID"))).and(QueryBuilder.eq("tstamp", QueryBuilder.bindMarker("time"))));
+			PreparedStatement ps_setOldPSVInvalid = session.prepare(
+					QueryBuilder.update("patient_standard_values")
+					.with(QueryBuilder.set("current", false))
+					.where(QueryBuilder.eq("PatID", QueryBuilder.bindMarker("PatID")))
+					.and(QueryBuilder.eq("receivedTime", QueryBuilder.bindMarker("time"))));
 			psCache.put("setPSVInvalid", ps_setOldPSVInvalid);
-			PreparedStatement ps_updatePSV = session.prepare(QueryBuilder.insertInto("patient_standard_values").value("PatID", QueryBuilder.bindMarker("id")).value("parameters", QueryBuilder.bindMarker("para")).value("current", true).value("tstamp", QueryBuilder.bindMarker("time")));
+			PreparedStatement ps_updatePSV = session.prepare(
+					QueryBuilder.insertInto("patient_standard_values")
+					.value("PatID", QueryBuilder.bindMarker("id"))
+					.value("parameters", QueryBuilder.bindMarker("para"))
+					.value("current", true)
+					.value("receivedTime", QueryBuilder.bindMarker("time")));
 			psCache.put("updatePatientStandardValues", ps_updatePSV);
 	}
 	
 	
 	public void processADT(Exchange exchange) throws Exception {
 		if (session == null) {connectToSession();}
-		
-		Message msg = exchange.getIn().getBody(Message.class);
-		Terser terse = new Terser(msg);
+		MessageDecoder mdecode = new MessageDecoder(exchange);
 		
 		Insert insert = QueryBuilder.insertInto("adt_messages");
+		HashMap<String,String> general = mdecode.generalInformation();
 		
-		String mId = terse.get("/.MSH-10");
-		String PatID = terse.get("/.PID-3-1");
-		String bedNR = terse.get("/.PV1-3");
-		if (PatID == null) {
-			Statement bedPatientId = QueryBuilder.select("PatID").from("patient_bed").where(QueryBuilder.eq("bed_information", bedNR));
-			PatID = session.execute(bedPatientId).one().getString("PatID");
+		String patid = mdecode.getPatientID();
+		int pat_id;
+		if (patid.isEmpty()) {
+			pat_id = ThreadLocalRandom.current().nextInt(1000, 10000);
+		} else {
+			pat_id = Integer.parseInt(patid);
 		}
-		String pointOfCare = bedNR.split("^")[0];
-		int PatID2 = Integer.parseInt(PatID);
-		String dob = terse.get("/.PID-7");
-		boolean current = true;
 		
-		insert.value("PatID", PatID2).value("msgCtrlID", mId).value("dob", dob).value("current", current).value("bedLocation", bedNR);
-		insert.value("tstamp", new Date().getTime());
+		long timeSent = mdecode.transformMSHTime();
+
+		String dob = mdecode.getDateOfBirth();
+		boolean current = true;
+		String srbInfo = general.get("stationInformation") + "^" + general.get("roomInformation") + "^" +general.get("bedInformation");
+		insert.value("PatID", pat_id).value("msgCtrlID", general.get("msgctrlid"))
+		.value("dob", dob).value("current", current)
+		.value("bedLocation",  srbInfo);
+		insert.value("receivedTime", System.currentTimeMillis());
+		insert.value("sendTime", timeSent);
+		
 		session.executeAsync(insert);
 		
-		Insert bedInformation = QueryBuilder.insertInto("patient_bed_station").value("bedInformation", bedNR).value("PatID", PatID2);
-		bedInformation.value("station", pointOfCare);
+		Insert bedInformation = QueryBuilder.insertInto("patient_bed_station")
+				.value("bedInformation", general.get("bedInformation"))
+				.value("PatID", pat_id);
+		bedInformation.value("station", general.get("stationInformation"));
+		bedInformation.value("roomNr", general.get("roomInformation"));
+		bedInformation.value("receivedTime", System.currentTimeMillis());
+		bedInformation.value("sendTime", timeSent);
 		session.executeAsync(bedInformation);
 	}
 	
@@ -99,43 +142,55 @@ public class cassandraWriter {
 	public void processA03(Exchange exchange) throws Exception {
 		if (session==null) {connectToSession();}
 		
-		Message msg = exchange.getIn().getBody(Message.class);
-		Terser terse = new Terser(msg);
+		MessageDecoder mdecode = new MessageDecoder(exchange);
 		
-		String pid = terse.get("/.PID-3-1");
-		String bedInfo = terse.get("/.PV1-3");
+		String pid = mdecode.getPatientID();
+		String bedInfo = mdecode.getBed();
+		String station = mdecode.getStation();
+		String room = mdecode.getRoom();
+		int patID;
+		try {
+			patID = Integer.parseInt(pid);
+		} catch (NumberFormatException e) {
+			Statement stmt = QueryBuilder.select("PatID").from("patient_bed_station").allowFiltering()
+					.where(QueryBuilder.eq("bedInformation", bedInfo))
+					.and(QueryBuilder.eq("roomNr", room))
+					.and(QueryBuilder.eq("station", station));
+			ResultSet rs = session.execute(stmt);
+			patID = rs.one().getInt("PatID");
+			
+		}
 		
-		int patID = Integer.parseInt(pid);
 		// get old adt information and make invalid
 		BoundStatement changeADTInfo = new BoundStatement(psCache.get("adtChangeCurrent"));
 		changeADTInfo.setInt("p", patID);
-		changeADTInfo.setString("time", ""+System.currentTimeMillis());
+		changeADTInfo.setLong("time", mdecode.transformMSHTime());
+		
 		session.executeAsync(changeADTInfo);
 		
 		// remove patient from bed and set bed free (i.e., delete the patient)
-		// TODO: decide whether to delete or only mark as not current s.t. later less to enter
-		Statement deleteBedInfo = QueryBuilder.delete().from("patient_bed").where(QueryBuilder.eq("bedInformation", bedInfo)).and(QueryBuilder.eq("PatID", patID));
+		Statement deleteBedInfo = QueryBuilder.delete().from("patient_bed_station")
+				.where(QueryBuilder.eq("bedInformation", bedInfo))
+				.and(QueryBuilder.eq("roomNr", room))
+				.and(QueryBuilder.eq("station", station))
+				.and(QueryBuilder.eq("PatID", patID));
 		session.execute(deleteBedInfo);
 
 		
 	}
 	
 	
-	public void processAsAlarm(String MesID, int PatID, Message msg_content, int nrOBX) throws HL7Exception {
-//		HashMap<String, String> alarmReasons = new HashMap<String, String>();
+	public void processAsAlarm(String MesID, int PatID, MessageDecoder msg_content, int nrOBX) throws HL7Exception {
 		List<String> alarmReasons = new LinkedList<String>();
 		HashMap<String, Integer> severness = new HashMap<String, Integer>();
-		
-		Terser terse = new Terser(msg_content);
-				
 		boolean looping = true;
 		int i = 0;
 		while (looping) {
 			try {
-				String ending = terse.get("/.OBSERVATION(" + i + ")/OBX-3-3");
+				String ending = msg_content.getObsCoding(i);
 				if (ending.toLowerCase().contains("alert")) {
-					String name = terse.get("/.OBSERVATION(" + i + ")/OBX-3-2");
-					String value = terse.get("/.OBSERVATION(" + i + ")/OBX-5");
+					String name = msg_content.getObsText(i);
+					String value = msg_content.getObsValueStr(i);
 					alarmReasons.add(value);
 					severness.put(name, severness.getOrDefault(name, 0) + 1);
 				}
@@ -150,7 +205,7 @@ public class cassandraWriter {
 		bs.setList("r", alarmReasons);
 		bs.setMap("s", severness);
 		bs.setInt("p", PatID);
-		bs.setString("time", ""+System.currentTimeMillis());
+		bs.setLong("time", System.currentTimeMillis());
 		session.executeAsync(bs);
 	}
 
@@ -205,7 +260,7 @@ public class cassandraWriter {
 		BoundStatement insert = new BoundStatement(psCache.get("updatePatientStandardValues"));
 		insert.setInt("id", PatID);
 		insert.setMap("para", mapping);
-		insert.setString("time", ""+System.currentTimeMillis());
+		insert.setLong("time", System.currentTimeMillis());
 		
 		session.executeAsync(insert);
 		
@@ -221,10 +276,9 @@ public class cassandraWriter {
 		Map<String, TupleValue> newMapping = new HashMap<String, TupleValue>();
 		boolean changed = false;
 		List<Long> oldTimestamps = new LinkedList<Long>();
-//		TupleType boundaryType = session.getCluster().getMetadata().newTupleType(DataType.cfloat(), DataType.cfloat());
 		if (!oldValues.isExhausted()) {
 			for (Row row: oldValues) {
-				oldTimestamps.add(Long.parseLong(row.getString("tstamp")));
+				oldTimestamps.add(row.getLong("sendTime"));
 				Map<String, TupleValue> old = row.getMap("parameters", String.class, TupleValue.class);
 				for (Entry<String, String> e: trueBorders.entrySet()) {
 					TupleValue bounds;
@@ -255,16 +309,18 @@ public class cassandraWriter {
 		}
 		
 		if (changed){
+			// set old invalid
 			BoundStatement changeOld = new BoundStatement(psCache.get("setPSVInvalid"));
 			changeOld.setInt("PatID", PatID);
 			long max = Collections.max(oldTimestamps);
-			changeOld.setString("time", ""+max);
+			changeOld.setLong("time", max);
 			session.execute(changeOld);
 
+			// and insert new ones
 			BoundStatement bs = new BoundStatement(psCache.get("updatePatientStandardValues"));
 			bs.setMap("para", newMapping);
 			bs.setInt("id", PatID);
-			bs.setString("time", ""+System.currentTimeMillis());
+			bs.setLong("time", System.currentTimeMillis());
 			session.executeAsync(bs);
 		}
 	}
@@ -272,48 +328,78 @@ public class cassandraWriter {
 	
 	public void process(Exchange exchange) throws Exception {
 		if (session == null) { connectToSession();}
+		MessageDecoder mdecode = new MessageDecoder(exchange);
+		
+		HashMap<String, String> general = mdecode.generalInformation();
+		int visitNumber = mdecode.getVisitNumber();
 
-		Message msg_content = exchange.getIn().getBody(Message.class);
-		Terser terse = new Terser(msg_content);
+		String pID = mdecode.getPatientID();
 		
-		String idx = terse.get("/.MSH-10");  
-		
-		String pID = terse.get("/.PID-3-1");
-		if (pID == null) {
+		if (pID.isEmpty()) {
 			// get it from his bedID if possible
-			String bedInfo = terse.get("/.PV1-3");
-			Statement bedSelect = QueryBuilder.select("PatID").from("patient_bed").where(QueryBuilder.eq("bedInformation", bedInfo));
+			Statement bedSelect = QueryBuilder.select("PatID").from("patient_bed_station").where(QueryBuilder.eq("bedInformation", general.get("bedInformation")))
+					.and(QueryBuilder.eq("station", general.get("stationInformation"))).and(QueryBuilder.eq("roomNr", general.get("roomInformation")));
 			ResultSet rs = session.execute(bedSelect);
-			pID = Integer.toString(rs.one().getInt("PatID"));
-			
+			Row r = rs.one();
+			if (r != null) {
+				pID = Integer.toString(rs.one().getInt("PatID"));
+			} else {
+				Statement selectIDs = QueryBuilder.select("patid").from("patient_bed_station");
+				rs = session.execute(selectIDs);
+				List<Integer> entries = new ArrayList<Integer>();
+				for (Row jrow: rs) {
+					entries.add(jrow.getInt("patid"));
+				}
+				int tmp = ThreadLocalRandom.current().nextInt(1000, 10000);
+				while (entries.contains(tmp)) {
+					tmp = ThreadLocalRandom.current().nextInt(1000, 10000);
+				}
+				
+				Statement bedInsert = QueryBuilder.insertInto("patient_bed_station")
+						.value("bedInformation", general.get("bedInformation"))
+						.value("roomNr", general.get("roomInformation"))
+						.value("station", general.get("stationInformation"))
+						.value("time",  mdecode.getOBRTime())
+						.value("patid", tmp);
+				session.executeAsync(bedInsert);
+			}
 		}
-		int pID2 = Integer.parseInt(pID);
 		
+		int pID2 = Integer.parseInt(pID);
 		boolean alarmCheck = false;
 		
-		HashMap<String, Float> numerics = new HashMap<String, Float>();
+		HashMap<String, TupleValue> numerics = new HashMap<String, TupleValue>();
 		HashMap<String, String> textual = new HashMap<String, String>();
 		HashMap<String, String> borders = new HashMap<String, String>();
+		HashMap<String, String> abnormalMap = new HashMap<String, String>();
 		
+		TupleType tt = session.getCluster().getMetadata().newTupleType(DataType.cfloat(), DataType.text()); 
+
 		boolean looping = true;
 		int i = 0;
+		BoundStatement insert = new BoundStatement(psCache.get("oruInsert"));
 		while (looping) {
 			try {
-				String name = terse.get("/.OBSERVATION(" + i + ")/OBX-3-2");
-				String ending = terse.get("/.OBSERVATION(" + i + ")/OBX-3-3");
+				String name = mdecode.getObsText(i);
+				String ending = mdecode.getObsCoding(i);
 				if (ending.toLowerCase().contains("alert")) {
 					alarmCheck = true;
 				}
-				String linetype = terse.get("/.OBSERVATION(" + i + ")/OBX-2");
+				String abnormalMarker = mdecode.getAbnormal(i);
+				abnormalMap.put(name, abnormalMarker);
+				String linetype = mdecode.getCoding(i);
 				if (linetype.equals("NM")) {
-					Float value = Float.parseFloat(terse.get("/.OBSERVATION(" + i + ")/OBX-5-1"));
-					numerics.put(name, value);
-					String borderString = terse.get("/.OBSERVATION(" + i + ")/OBX-7");
+					Float value = mdecode.getObsValueFlt(i);
+					String unit = mdecode.getObsUnit(i);
+					TupleValue tp = tt.newValue(value, unit);
+					
+					numerics.put(name, tp);
+					String borderString = mdecode.getBorderString(i);
 					if (!borderString.isEmpty()) {
 						borders.put(name, borderString);
 					}
 				} else if (linetype.equals("ST") || linetype.equals("TX")) {
-					String value = terse.get("/.OBSERVATION(" + i + ")/OBX-5");
+					String value = mdecode.getObsValueStr(i);
 					if (value == null) {
 						value = "";
 					}
@@ -330,18 +416,32 @@ public class cassandraWriter {
 			processLimits(pID2, borders);
 		}
 		
-		BoundStatement insert = new BoundStatement(psCache.get("oruInsert"));
 		
 		insert.setInt("p", pID2);
-		insert.setString("m", idx);
+		insert.setString("m", general.get("msgctrlid"));
 		insert.setMap("n", numerics);
 		insert.setMap("t", textual);
-		insert.setString("time", ""+System.currentTimeMillis());
+		insert.setMap("abnormal", abnormalMap);
+		insert.setInt("visit", visitNumber);
+		insert.setLong("time", System.currentTimeMillis());
+		insert.setLong("send", mdecode.getOBRTime());
+		insert.setString("bed", general.get("stationInformation") + "^" + general.get("roomInformation") + "^" + general.get("bedInformation"));
 		
  		session.executeAsync(insert);
+		
+		// check whether person has a bed? or even more simple, make an upsert
  		
-		if (alarmCheck) {
-			processAsAlarm(idx, pID2, msg_content, i);
+ 		Statement patInfo = QueryBuilder.insertInto("patient_bed_station")
+ 				.value("patid", pID2)
+ 				.value("bedInformation", general.get("bedInformation"))
+ 				.value("roomNr", general.get("roomInformation"))
+ 				.value("station", general.get("stationInformation"))
+ 				.value("time", mdecode.getOBRTime());
+ 		
+ 		session.executeAsync(patInfo);
+
+ 		if (alarmCheck) {
+			processAsAlarm(general.get("msgctrlid"), pID2, mdecode, i);
 		}
 	}
 }

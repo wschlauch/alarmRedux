@@ -4,13 +4,13 @@
 [                          main] BrokerService                  INFO  Using Persistence Adapter: KahaDBPersistenceAdapter[C:\Users\Wolfgang\workspace\alarmRedux\activemq-data\localhost\KahaDB]
 [                 JMX connector] ManagementContext              INFO  JMX consoles can connect to service:jmx:rmi:///jndi/rmi://localhost:1099/jmxrmi
 [                          main] MessageDatabase                INFO  KahaDB is version 6
-[                          main] MessageDatabase                INFO  Recovering from the journal @8:189339
-[                          main] MessageDatabase                INFO  Recovery replayed 54262 operations from the journal in 0.512 seconds.
+[                          main] MessageDatabase                INFO  Recovering from the journal @16:778938
+[                          main] MessageDatabase                INFO  Recovery replayed 24 operations from the journal in 0.015 seconds.
 [                          main] PListStoreImpl                 INFO  PListStore:[C:\Users\Wolfgang\workspace\alarmRedux\activemq-data\localhost\tmp_storage] started
-[                          main] BrokerService                  INFO  Apache ActiveMQ 5.14.1 (localhost, ID:Venus-55190-1477557764610-0:1) is starting
+[                          main] BrokerService                  INFO  Apache ActiveMQ 5.14.1 (localhost, ID:Venus-58676-1479315491751-0:1) is starting
 [                          main] TransportServerThreadSupport   INFO  Listening for connections at: tcp://127.0.0.1:61616
 [                          main] TransportConnector             INFO  Connector tcp://127.0.0.1:61616 started
-[                          main] BrokerService                  INFO  Apache ActiveMQ 5.14.1 (localhost, ID:Venus-55190-1477557764610-0:1) started
+[                          main] BrokerService                  INFO  Apache ActiveMQ 5.14.1 (localhost, ID:Venus-58676-1479315491751-0:1) started
 [                          main] BrokerService                  INFO  For help or more information please see: http://activemq.apache.org
 [                          main] DefaultCamelContext            INFO  Apache Camel 2.17.3 (CamelContext: camel-1) is starting
 [                          main] ManagedManagementStrategy      INFO  JMX is enabled
@@ -24,48 +24,28 @@
 [                          main] DefaultCamelContext            INFO  Route: route2 started and consuming from: Endpoint[mina2://tcp://127.0.0.1:22400?codec=%23hl7codec&sync=true]
 [                          main] DefaultCamelContext            INFO  Route: route3 started and consuming from: Endpoint[jms://queue:awaitConsuming?disableReplyTo=true]
 [                          main] DefaultCamelContext            INFO  Total 3 routes, of which 3 are started.
-[                          main] DefaultCamelContext            INFO  Apache Camel 2.17.3 (CamelContext: camel-1) started in 0.390 seconds
+[                          main] DefaultCamelContext            INFO  Apache Camel 2.17.3 (CamelContext: camel-1) started in 0.413 seconds
 [ - JmsConsumer[awaitConsuming]] Native                         INFO  Could not load JNR C Library, native system calls through this library will not be available (set this logger level to DEBUG to see the full stack trace).
 [ - JmsConsumer[awaitConsuming]] ClockFactory                   INFO  Using java.lang.System clock to generate timestamps.
 [ - JmsConsumer[awaitConsuming]] NettyUtil                      WARN  Found Netty's native epoll transport, but not running on linux-based operating system. Using NIO instead.
 [ - JmsConsumer[awaitConsuming]] DCAwareRoundRobinPolicy        INFO  Using data-center name 'datacenter1' for DCAwareRoundRobinPolicy (if this is incorrect, please provide the correct datacenter name with DCAwareRoundRobinPolicy constructor)
 [ - JmsConsumer[awaitConsuming]] Cluster                        INFO  New Cassandra host /127.0.0.1:9042 added
-CHANGED TO INVALID
-[                NioProcessor-3] IoProcessor                    WARN  Create a new selector. Selected is 0, delta = 0
-CHANGED TO INVALID
-CHANGED TO INVALID
-CHANGED TO INVALID
-CHANGED TO INVALID
-CHANGED TO INVALID
-CHANGED TO INVALID
-CHANGED TO INVALID
-CHANGED TO INVALID
-CHANGED TO INVALID
-CHANGED TO INVALID
 [                      Thread-7] MainSupport$HangupInterceptor  INFO  Received hang up - stopping the main instance.
-[         ActiveMQ ShutdownHook] BrokerService                  INFO  Apache ActiveMQ 5.14.1 (localhost, ID:Venus-55190-1477557764610-0:1) is shutting down
+[         ActiveMQ ShutdownHook] BrokerService                  INFO  Apache ActiveMQ 5.14.1 (localhost, ID:Venus-58676-1479315491751-0:1) is shutting down
 [                      Thread-7] DefaultCamelContext            INFO  Apache Camel 2.17.3 (CamelContext: camel-1) is shutting down
-[Handler: tcp://127.0.0.1:61616] TcpTransportServer             INFO  socketQueue interrupted - stopping
 [                      Thread-7] DefaultShutdownStrategy        INFO  Starting to graceful shutdown 3 routes (timeout 300 seconds)
-[Handler: tcp://127.0.0.1:61616] TransportConnector             INFO  Could not accept connection during shutdown  : {}
-java.lang.InterruptedException
-	at java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionObject.reportInterruptAfterWait(Unknown Source)
-	at java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionObject.awaitNanos(Unknown Source)
-	at java.util.concurrent.LinkedBlockingQueue.poll(Unknown Source)
-	at org.apache.activemq.transport.tcp.TcpTransportServer$1.run(TcpTransportServer.java:468)
-	at java.lang.Thread.run(Unknown Source)
-[         ActiveMQ ShutdownHook] TransportConnector             INFO  Connector tcp://127.0.0.1:61616 stopped
 [ - JmsConsumer[awaitConsuming]] ultJmsMessageListenerContainer WARN  Setup of JMS message listener invoker failed for destination 'awaitConsuming' - trying to recover. Cause: java.io.EOFException
-[el-1) thread #1 - ShutdownTask] Mina2Consumer                  INFO  Unbinding from server address: /127.0.0.1:22400 using acceptor: (nio socket acceptor: localAddress(es): [/127.0.0.1:22400], managedSessionCount: 0)
+[         ActiveMQ ShutdownHook] TransportConnector             INFO  Connector tcp://127.0.0.1:61616 stopped
+[el-1) thread #1 - ShutdownTask] Mina2Consumer                  INFO  Unbinding from server address: /127.0.0.1:22400 using acceptor: (nio socket acceptor: localAddress(es): [/127.0.0.1:22400], managedSessionCount: 1)
+[el-1) thread #1 - ShutdownTask] DefaultShutdownStrategy        INFO  Route: route2 shutdown complete, was consuming from: Endpoint[mina2://tcp://127.0.0.1:22400?codec=%23hl7codec&sync=true]
+[el-1) thread #1 - ShutdownTask] Mina2Consumer                  INFO  Unbinding from server address: /127.0.0.1:8000 using acceptor: (nio datagram acceptor: localAddress(es): [/127.0.0.1:8000], managedSessionCount: 0)
 [         ActiveMQ ShutdownHook] PListStoreImpl                 INFO  PListStore:[C:\Users\Wolfgang\workspace\alarmRedux\activemq-data\localhost\tmp_storage] stopped
+[el-1) thread #1 - ShutdownTask] DefaultShutdownStrategy        INFO  Route: route1 shutdown complete, was consuming from: Endpoint[mina2://udp://127.0.0.1:8000?codec=%23hl7codec&sync=false]
 [         ActiveMQ ShutdownHook] KahaDBStore                    INFO  Stopping async queue tasks
 [         ActiveMQ ShutdownHook] KahaDBStore                    INFO  Stopping async topic tasks
 [         ActiveMQ ShutdownHook] KahaDBStore                    INFO  Stopped KahaDB
-[el-1) thread #1 - ShutdownTask] DefaultShutdownStrategy        INFO  Route: route2 shutdown complete, was consuming from: Endpoint[mina2://tcp://127.0.0.1:22400?codec=%23hl7codec&sync=true]
-[el-1) thread #1 - ShutdownTask] Mina2Consumer                  INFO  Unbinding from server address: /127.0.0.1:8000 using acceptor: (nio datagram acceptor: localAddress(es): [/127.0.0.1:8000], managedSessionCount: 0)
-[el-1) thread #1 - ShutdownTask] DefaultShutdownStrategy        INFO  Route: route1 shutdown complete, was consuming from: Endpoint[mina2://udp://127.0.0.1:8000?codec=%23hl7codec&sync=false]
 [el-1) thread #1 - ShutdownTask] DefaultShutdownStrategy        INFO  Route: route3 shutdown complete, was consuming from: Endpoint[jms://queue:awaitConsuming?disableReplyTo=true]
-[                      Thread-7] DefaultShutdownStrategy        INFO  Graceful shutdown of 3 routes completed in 1 seconds
+[                      Thread-7] DefaultShutdownStrategy        INFO  Graceful shutdown of 3 routes completed in 0 seconds
 [         NioDatagramAcceptor-1] DefaultExceptionMonitor        WARN  Unexpected exception.
 java.lang.InterruptedException
 	at java.util.concurrent.locks.AbstractQueuedSynchronizer.acquireSharedInterruptibly(Unknown Source)
@@ -75,8 +55,8 @@ java.lang.InterruptedException
 	at java.util.concurrent.ThreadPoolExecutor.runWorker(Unknown Source)
 	at java.util.concurrent.ThreadPoolExecutor$Worker.run(Unknown Source)
 	at java.lang.Thread.run(Unknown Source)
-[         ActiveMQ ShutdownHook] BrokerService                  INFO  Apache ActiveMQ 5.14.1 (localhost, ID:Venus-55190-1477557764610-0:1) uptime 4 hours 33 minutes
-[         ActiveMQ ShutdownHook] BrokerService                  INFO  Apache ActiveMQ 5.14.1 (localhost, ID:Venus-55190-1477557764610-0:1) is shutdown
+[         ActiveMQ ShutdownHook] BrokerService                  INFO  Apache ActiveMQ 5.14.1 (localhost, ID:Venus-58676-1479315491751-0:1) uptime 2 minutes
+[         ActiveMQ ShutdownHook] BrokerService                  INFO  Apache ActiveMQ 5.14.1 (localhost, ID:Venus-58676-1479315491751-0:1) is shutdown
 [                      Thread-7] MainLifecycleStrategy          INFO  CamelContext: camel-1 has been shutdown, triggering shutdown of the JVM.
-[                      Thread-7] DefaultCamelContext            INFO  Apache Camel 2.17.3 (CamelContext: camel-1) uptime 4 hours 33 minutes
-[                      Thread-7] DefaultCamelContext            INFO  Apache Camel 2.17.3 (CamelContext: camel-1) is shutdown in 4.206 seconds
+[                      Thread-7] DefaultCamelContext            INFO  Apache Camel 2.17.3 (CamelContext: camel-1) uptime 2 minutes
+[                      Thread-7] DefaultCamelContext            INFO  Apache Camel 2.17.3 (CamelContext: camel-1) is shutdown in 2.100 seconds

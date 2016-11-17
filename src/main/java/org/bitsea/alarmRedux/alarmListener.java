@@ -1,7 +1,8 @@
 package org.bitsea.alarmRedux;
 
-import javax.jms.ConnectionFactory;
 import java.net.URI;
+
+import javax.jms.ConnectionFactory;
 
 import org.apache.activemq.ActiveMQConnectionFactory;
 import org.apache.activemq.broker.BrokerFactory;
@@ -11,14 +12,16 @@ import org.apache.camel.component.hl7.HL7MLLPNettyDecoderFactory;
 import org.apache.camel.component.hl7.HL7MLLPNettyEncoderFactory;
 import org.apache.camel.component.jms.JmsComponent;
 import org.apache.camel.main.Main;
+import org.apache.commons.cli.BasicParser;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.HelpFormatter;
-import org.apache.commons.cli.BasicParser;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.bitsea.alarmRedux.routes.in.InboundRouteBuilder2;
 import org.bitsea.alarmRedux.routes.out.OutboundRouteBuilder;
+
+
 
 
 public class alarmListener {

@@ -6,17 +6,23 @@ CREATE KEYSPACE message_database WITH REPLICATION =  {
 };
 
 use message_database;
+
 CREATE TABLE IF NOT EXISTS oru_messages (
-	tstamp text,
+	receivedTime bigint,
 	msgCtrlID text,
 	PatID int,
-	numeric map<text, float>,
+	numeric map<text, frozen<tuple<float, text>>>,
 	textual map<text, text>,
-	PRIMARY KEY (PatID, msgCtrlID)
+	bedInformation text,
+	sendTime bigint,
+	abnormal map<text, text>,
+	visitNumber int,
+	PRIMARY KEY (PatID, msgCtrlID, visitNumber)
 );
 
 CREATE TABLE IF NOT EXISTS adt_messages (
-	tstamp text,
+	receivedTime bigint,
+	sendTime bigint,
 	msgCtrlID text,
 	PatID int,
 	dob text,
@@ -26,7 +32,8 @@ CREATE TABLE IF NOT EXISTS adt_messages (
 );
 
 CREATE TABLE IF NOT EXISTS alarm_information (
-	tstamp text,
+	receivedTime bigint,
+	sendTime bigint,
 	msgCtrlID text,
 	PatID int,
 	reason set<text>,
@@ -36,16 +43,28 @@ CREATE TABLE IF NOT EXISTS alarm_information (
 
 
 CREATE TABLE IF NOT EXISTS patient_standard_values (
-	tstamp text,
+	receivedTime bigint,
+	sendTime bigint,
 	PatID int,
 	parameters map<text, frozen <tuple<float,float>>>,
 	current boolean,
-	PRIMARY KEY (PatId, tstamp)
+	PRIMARY KEY (PatId, receivedTime)
 );
 
 CREATE TABLE IF NOT EXISTS patient_bed_station (
 	PatID int,
+	roomNr text,
 	bedInformation text,
 	station text,
+	time bigint,
 	PRIMARY KEY (PatID, bedInformation, station)
+);
+
+CREATE TABLE IF NOT EXISTS error_log (
+	msgctrlid text,
+	patid int,
+	receivedTime bigint,
+	sendTime bigint,
+	msg text,
+	PRIMARY KEY (patid, msgctrlid)
 );
