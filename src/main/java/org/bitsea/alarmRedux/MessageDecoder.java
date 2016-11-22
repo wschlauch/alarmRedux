@@ -28,7 +28,9 @@ public class MessageDecoder {
 			Date date = format.parse(terser.get("/.MSH-7"));
 			time = date.getTime();
 		} catch (ParseException e) {
-			time = -1L;
+			time = System.currentTimeMillis();
+		} catch (NullPointerException e) {
+			time = System.currentTimeMillis();
 		}
 		return time;
 	}
@@ -112,7 +114,7 @@ public class MessageDecoder {
 	}
 	
 	
-	public long getOBRTime() throws HL7Exception, ParseException {
+	public long getOBRTime() throws HL7Exception, ParseException, NullPointerException {
 		String timeTest = terser.get("/.OBR-7");
 		SimpleDateFormat format = new SimpleDateFormat("yyyyMMddHHmmss");
 		long time;

@@ -1,5 +1,6 @@
 package org.bitsea.alarmRedux;
 
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -74,7 +75,8 @@ public class cassandraWriter {
 					.value("msgCtrlID", QueryBuilder.bindMarker("m"))
 					.value("reason", QueryBuilder.bindMarker("r"))
 					.value("severness_counter", QueryBuilder.bindMarker("s"))
-					.value("receivedTime", QueryBuilder.bindMarker("time")));
+					.value("receivedTime", QueryBuilder.bindMarker("time"))
+					.value("sendTime", QueryBuilder.bindMarker("sendAt")));
 			psCache.put("adtChangeCurrent", ps_adtChangeCurrent);
 			psCache.put("oruInsert", ps_insertNewORU);
 			psCache.put("insertAlarm", ps_insertAlarm);
@@ -180,7 +182,7 @@ public class cassandraWriter {
 	}
 	
 	
-	public void processAsAlarm(String MesID, int PatID, MessageDecoder msg_content, int nrOBX) throws HL7Exception {
+	public void processAsAlarm(String MesID, int PatID, MessageDecoder msg_content, int nrOBX) throws HL7Exception, ParseException {
 		List<String> alarmReasons = new LinkedList<String>();
 		HashMap<String, Integer> severness = new HashMap<String, Integer>();
 		boolean looping = true;
@@ -199,12 +201,14 @@ public class cassandraWriter {
 				looping = false;
 			}
 		}
+		long ts;
 		
 		BoundStatement bs = new BoundStatement(psCache.get("insertAlarm"));
 		bs.setString("m", MesID);
 		bs.setList("r", alarmReasons);
 		bs.setMap("s", severness);
 		bs.setInt("p", PatID);
+		bs.setLong("sendAt", msg_content.getOBRTime());
 		bs.setLong("time", System.currentTimeMillis());
 		session.executeAsync(bs);
 	}
