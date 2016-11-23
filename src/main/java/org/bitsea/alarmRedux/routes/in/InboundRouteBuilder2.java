@@ -13,11 +13,14 @@ public class InboundRouteBuilder2 extends RouteBuilder {
 	@Override
 	public void configure() throws Exception {
 		DataFormat hl7 = new HL7DataFormat();
-		from("mina2:tcp://127.0.0.1:8000??sync=false&codec=#hl7codec")
-		    .to("jms:queue:awaitConsuming?disableReplyTo=true").unmarshal(hl7)
-		    .to("bean:processManager?method=generateACK")//.marshal(hl7)
+		from("mina2:udp://" + System.getProperty("MINAHOST") + ":" + System.getProperty("PORT") + "?sync=false&codec=#hl7codec")
+		    .to("jms:queue:awaitConsuming?disableReplyTo=true").unmarshal().hl7(false)
 		.end();
 		
+		from("mina2:tcp://" + System.getProperty("MINAHOST") + ":" + System.getProperty("ADTPORT") + "?sync=true&codec=#hl7codec")
+		.to("jms:queue:awaitConsuming?disableReplyTo=true").unmarshal().hl7(false)
+			.to("bean:processManager?method=generateACK").marshal().hl7(false)
+			.end();
 	}
 
 }
