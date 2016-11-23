@@ -24,8 +24,7 @@ import com.datastax.driver.core.TupleType;
 import com.datastax.driver.core.TupleValue;
 import com.datastax.driver.core.querybuilder.Insert;
 import com.datastax.driver.core.querybuilder.QueryBuilder;
-import com.datastax.driver.core.querybuilder.Update;
-import com.datastax.driver.core.querybuilder.Update.Assignments;
+
 
 import ca.uhn.hl7v2.HL7Exception;
 import io.netty.util.internal.ThreadLocalRandom;
@@ -90,14 +89,15 @@ public class cassandraWriter {
 					QueryBuilder.update("patient_standard_values")
 					.with(QueryBuilder.set("current", false))
 					.where(QueryBuilder.eq("PatID", QueryBuilder.bindMarker("PatID")))
-					.and(QueryBuilder.eq("receivedTime", QueryBuilder.bindMarker("time"))));
+					.and(QueryBuilder.eq("receivedTime", QueryBuilder.bindMarker("ttime"))));
 			psCache.put("setPSVInvalid", ps_setOldPSVInvalid);
 			PreparedStatement ps_updatePSV = session.prepare(
 					QueryBuilder.insertInto("patient_standard_values")
 					.value("PatID", QueryBuilder.bindMarker("id"))
 					.value("parameters", QueryBuilder.bindMarker("para"))
 					.value("current", true)
-					.value("receivedTime", QueryBuilder.bindMarker("time")));
+					.value("receivedTime", QueryBuilder.bindMarker("time"))
+					.value("sendTime", QueryBuilder.bindMarker("sending")));
 			psCache.put("updatePatientStandardValues", ps_updatePSV);
 	}
 	
@@ -245,9 +245,20 @@ public class cassandraWriter {
 	}
 	
 	
-	public void processNewBorders(int PatID, Map<String, String> borders) {
+	public void processNewBorders(int PatID, Map<String, String> borders, long sendTime) {
 		// cases that may occur are : (-)x-y, <y (theoretically >y ?)
-		Map<String, TupleValue> mapping = new HashMap<String, TupleValue>();
+		// but first, get the old params such that we can overwrite/add the new params
+		// but keep the old
+		Statement stmt = QueryBuilder.select("parameters").from("patient_standard_values")
+				.where(QueryBuilder.eq("patid", PatID)).and(QueryBuilder.lt("receivedTime", System.currentTimeMillis()));
+		ResultSet rs = session.execute(stmt);
+		Map<String, TupleValue> mapping;
+		if (!rs.isExhausted()) {
+			Row row = rs.one();
+			mapping = row.getMap("parameters", String.class, TupleValue.class);
+		} else {
+			mapping = new HashMap<String, TupleValue>();
+		}
 		for (Entry<String, String> e: borders.entrySet()) {
 			String key = e.getKey();
 			String value = e.getValue();
@@ -265,13 +276,14 @@ public class cassandraWriter {
 		insert.setInt("id", PatID);
 		insert.setMap("para", mapping);
 		insert.setLong("time", System.currentTimeMillis());
+		insert.setLong("sending", sendTime);
 		
 		session.executeAsync(insert);
 		
 	}
 	
 	
-	public void processLimits(int PatID, Map<String, String> trueBorders) throws ClassNotFoundException {
+	public void processLimits(int PatID, Map<String, String> trueBorders, long time) throws ClassNotFoundException {
 
 		BoundStatement getOldValues = new BoundStatement(psCache.get("getPatientValues"));
 		getOldValues.setInt("id", PatID);
@@ -279,45 +291,41 @@ public class cassandraWriter {
 		
 		Map<String, TupleValue> newMapping = new HashMap<String, TupleValue>();
 		boolean changed = false;
-		List<Long> oldTimestamps = new LinkedList<Long>();
-		if (!oldValues.isExhausted()) {
-			for (Row row: oldValues) {
-				oldTimestamps.add(row.getLong("sendTime"));
-				Map<String, TupleValue> old = row.getMap("parameters", String.class, TupleValue.class);
-				for (Entry<String, String> e: trueBorders.entrySet()) {
-					TupleValue bounds;
-					String key = e.getKey();
-					String val = e.getValue();
-					if (val.contains("<") || val.contains(">")) {
-						bounds = parseCmp(val);
-					} else {
-						bounds = parseFromTo(val);
-					}
-					try {
-						TupleValue v = (TupleValue) old.get(key);
-						float oldLow = v.getFloat(0);
-						float oldHigh = v.getFloat(1);
-						if (bounds.getFloat(0) != oldLow || bounds.getFloat(1) != oldHigh) {
-							newMapping.put(key, bounds);
-							changed = true;
-						} else {
-							newMapping.put(key, v);
-						}
-					} catch (Exception z) {
-						// pass, just means that this key was not in the old map
-					}
+		long oldTimestamp = System.currentTimeMillis();
+		if (!oldValues.isExhausted()) {	
+			Row row = oldValues.one();
+			oldTimestamp = row.getLong("sendTime");
+			Map<String, TupleValue> oldData = row.getMap("parameters", String.class, TupleValue.class);	
+			for (Entry<String, String> e: trueBorders.entrySet()) {
+				TupleValue bounds;
+				String key = e.getKey();
+				String val = e.getValue();
+				if (val.contains("<") || val.contains(">")) {
+					bounds = parseCmp(val);
+				} else {
+					bounds = parseFromTo(val);
 				}
+				if (oldData.containsKey(key) && !changed) {
+					TupleValue v = (TupleValue) oldData.get(key);
+					float oldLow = v.getFloat(0);
+					float oldHigh = v.getFloat(1);
+					if (bounds.getFloat(0) != oldLow || bounds.getFloat(1) != oldHigh) {
+						changed = true;
+					}
+				} 
+					
+				newMapping.put(key, bounds);
+
 			}
 		} else {
-			processNewBorders(PatID, trueBorders);
+			processNewBorders(PatID, trueBorders, time);
 		}
 		
 		if (changed){
 			// set old invalid
 			BoundStatement changeOld = new BoundStatement(psCache.get("setPSVInvalid"));
 			changeOld.setInt("PatID", PatID);
-			long max = Collections.max(oldTimestamps);
-			changeOld.setLong("time", max);
+			changeOld.setLong("ttime", oldTimestamp);
 			session.execute(changeOld);
 
 			// and insert new ones
@@ -325,6 +333,7 @@ public class cassandraWriter {
 			bs.setMap("para", newMapping);
 			bs.setInt("id", PatID);
 			bs.setLong("time", System.currentTimeMillis());
+			bs.setLong("sending", time);
 			session.executeAsync(bs);
 		}
 	}
@@ -417,7 +426,7 @@ public class cassandraWriter {
 		}
 		
 		if (borders.size() > 0) {
-			processLimits(pID2, borders);
+			processLimits(pID2, borders, mdecode.getOBRTime());
 		}
 		
 		

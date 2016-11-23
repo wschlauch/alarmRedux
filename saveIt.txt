@@ -1,17 +1,19 @@
-[                          main] Home                           INFO  hapi.home is set to C:\Users\Wolfgang\workspace\alarmRedux\.
+[                          main] Home                           INFO  hapi.home is set to /Users/w_schlauch/git/alarmRedux/.
 [                          main] VersionLogger                  INFO  HAPI version is: 2.2
 [                          main] VersionLogger                  INFO  Default Structure libraries found for HL7 versions 2.3, 2.5, 
-[                          main] BrokerService                  INFO  Using Persistence Adapter: KahaDBPersistenceAdapter[C:\Users\Wolfgang\workspace\alarmRedux\activemq-data\localhost\KahaDB]
+[                          main] BrokerService                  WARN  Memory Usage for the Broker (1024mb) is more than the maximum available for the JVM: 910 mb - resetting to 70% of maximum available: 637 mb
 [                 JMX connector] ManagementContext              INFO  JMX consoles can connect to service:jmx:rmi:///jndi/rmi://localhost:1099/jmxrmi
+[                          main] BrokerService                  INFO  Using Persistence Adapter: KahaDBPersistenceAdapter[/Users/w_schlauch/git/alarmRedux/activemq-data/localhost/KahaDB]
 [                          main] MessageDatabase                INFO  KahaDB is version 6
-[                          main] MessageDatabase                INFO  Recovering from the journal @17:26331903
-[                          main] MessageDatabase                INFO  Recovery replayed 3 operations from the journal in 0.015 seconds.
-[                          main] PListStoreImpl                 INFO  PListStore:[C:\Users\Wolfgang\workspace\alarmRedux\activemq-data\localhost\tmp_storage] started
-[                          main] BrokerService                  INFO  Apache ActiveMQ 5.14.1 (localhost, ID:Venus-61917-1479733410557-0:1) is starting
-[                          main] TransportServerThreadSupport   INFO  Listening for connections at: tcp://127.0.0.1:61616
-[                          main] TransportConnector             INFO  Connector tcp://127.0.0.1:61616 started
-[                          main] BrokerService                  INFO  Apache ActiveMQ 5.14.1 (localhost, ID:Venus-61917-1479733410557-0:1) started
+[                          main] MessageDatabase                INFO  Recovering from the journal @17:31852369
+[                          main] MessageDatabase                INFO  Recovery replayed 276 operations from the journal in 0.093 seconds.
+[                          main] PListStoreImpl                 INFO  PListStore:[/Users/w_schlauch/git/alarmRedux/activemq-data/localhost/tmp_storage] started
+[                          main] BrokerService                  INFO  Apache ActiveMQ 5.14.1 (localhost, ID:wolfganchlauch2.speedportneo09012801000249-59173-1479916889905-0:1) is starting
+[                          main] TransportServerThreadSupport   INFO  Listening for connections at: tcp://localhost:61616
+[                          main] TransportConnector             INFO  Connector tcp://localhost:61616 started
+[                          main] BrokerService                  INFO  Apache ActiveMQ 5.14.1 (localhost, ID:wolfganchlauch2.speedportneo09012801000249-59173-1479916889905-0:1) started
 [                          main] BrokerService                  INFO  For help or more information please see: http://activemq.apache.org
+[                          main] BrokerService                  WARN  Store limit is 102400 mb (current store usage is 61 mb). The data directory: /Users/w_schlauch/git/alarmRedux/activemq-data/localhost/KahaDB only has 82002 mb of usable space. - resetting to maximum available disk space: 82002 mb
 [                          main] DefaultCamelContext            INFO  Apache Camel 2.17.3 (CamelContext: camel-1) is starting
 [                          main] ManagedManagementStrategy      INFO  JMX is enabled
 [                          main] DefaultTypeConverter           INFO  Loaded 184 type converters
@@ -24,39 +26,38 @@
 [                          main] DefaultCamelContext            INFO  Route: route2 started and consuming from: Endpoint[mina2://tcp://127.0.0.1:22400?codec=%23hl7codec&sync=true]
 [                          main] DefaultCamelContext            INFO  Route: route3 started and consuming from: Endpoint[jms://queue:awaitConsuming?disableReplyTo=true]
 [                          main] DefaultCamelContext            INFO  Total 3 routes, of which 3 are started.
-[                          main] DefaultCamelContext            INFO  Apache Camel 2.17.3 (CamelContext: camel-1) started in 0.437 seconds
-[ - JmsConsumer[awaitConsuming]] Native                         INFO  Could not load JNR C Library, native system calls through this library will not be available (set this logger level to DEBUG to see the full stack trace).
-[ - JmsConsumer[awaitConsuming]] ClockFactory                   INFO  Using java.lang.System clock to generate timestamps.
+[                          main] DefaultCamelContext            INFO  Apache Camel 2.17.3 (CamelContext: camel-1) started in 1.203 seconds
+[ - JmsConsumer[awaitConsuming]] ClockFactory                   INFO  Using native clock to generate timestamps.
 [ - JmsConsumer[awaitConsuming]] NettyUtil                      WARN  Found Netty's native epoll transport, but not running on linux-based operating system. Using NIO instead.
 [ - JmsConsumer[awaitConsuming]] DCAwareRoundRobinPolicy        INFO  Using data-center name 'datacenter1' for DCAwareRoundRobinPolicy (if this is incorrect, please provide the correct datacenter name with DCAwareRoundRobinPolicy constructor)
 [ - JmsConsumer[awaitConsuming]] Cluster                        INFO  New Cassandra host /127.0.0.1:9042 added
+[         ActiveMQ ShutdownHook] BrokerService                  INFO  Apache ActiveMQ 5.14.1 (localhost, ID:wolfganchlauch2.speedportneo09012801000249-59173-1479916889905-0:1) is shutting down
 [                      Thread-7] MainSupport$HangupInterceptor  INFO  Received hang up - stopping the main instance.
-[         ActiveMQ ShutdownHook] BrokerService                  INFO  Apache ActiveMQ 5.14.1 (localhost, ID:Venus-61917-1479733410557-0:1) is shutting down
 [                      Thread-7] DefaultCamelContext            INFO  Apache Camel 2.17.3 (CamelContext: camel-1) is shutting down
 [                      Thread-7] DefaultShutdownStrategy        INFO  Starting to graceful shutdown 3 routes (timeout 300 seconds)
-[ - JmsConsumer[awaitConsuming]] ultJmsMessageListenerContainer WARN  Setup of JMS message listener invoker failed for destination 'awaitConsuming' - trying to recover. Cause: java.io.EOFException
-[         ActiveMQ ShutdownHook] TransportConnector             INFO  Connector tcp://127.0.0.1:61616 stopped
-[el-1) thread #1 - ShutdownTask] Mina2Consumer                  INFO  Unbinding from server address: /127.0.0.1:22400 using acceptor: (nio socket acceptor: localAddress(es): [/127.0.0.1:22400], managedSessionCount: 1)
-[         ActiveMQ ShutdownHook] PListStoreImpl                 INFO  PListStore:[C:\Users\Wolfgang\workspace\alarmRedux\activemq-data\localhost\tmp_storage] stopped
-[         ActiveMQ ShutdownHook] KahaDBStore                    INFO  Stopping async queue tasks
-[         ActiveMQ ShutdownHook] KahaDBStore                    INFO  Stopping async topic tasks
-[         ActiveMQ ShutdownHook] KahaDBStore                    INFO  Stopped KahaDB
+[el-1) thread #1 - ShutdownTask] Mina2Consumer                  INFO  Unbinding from server address: /127.0.0.1:22400 using acceptor: (nio socket acceptor: localAddress(es): [/127.0.0.1:22400], managedSessionCount: 0)
 [el-1) thread #1 - ShutdownTask] DefaultShutdownStrategy        INFO  Route: route2 shutdown complete, was consuming from: Endpoint[mina2://tcp://127.0.0.1:22400?codec=%23hl7codec&sync=true]
 [el-1) thread #1 - ShutdownTask] Mina2Consumer                  INFO  Unbinding from server address: /127.0.0.1:8000 using acceptor: (nio datagram acceptor: localAddress(es): [/127.0.0.1:8000], managedSessionCount: 0)
 [el-1) thread #1 - ShutdownTask] DefaultShutdownStrategy        INFO  Route: route1 shutdown complete, was consuming from: Endpoint[mina2://udp://127.0.0.1:8000?codec=%23hl7codec&sync=false]
+[         ActiveMQ ShutdownHook] TransportConnector             INFO  Connector tcp://localhost:61616 stopped
+[         ActiveMQ ShutdownHook] PListStoreImpl                 INFO  PListStore:[/Users/w_schlauch/git/alarmRedux/activemq-data/localhost/tmp_storage] stopped
+[         ActiveMQ ShutdownHook] KahaDBStore                    INFO  Stopping async queue tasks
+[         ActiveMQ ShutdownHook] KahaDBStore                    INFO  Stopping async topic tasks
+[         ActiveMQ ShutdownHook] KahaDBStore                    INFO  Stopped KahaDB
+[ - JmsConsumer[awaitConsuming]] ultJmsMessageListenerContainer WARN  Setup of JMS message listener invoker failed for destination 'awaitConsuming' - trying to recover. Cause: java.io.EOFException
 [el-1) thread #1 - ShutdownTask] DefaultShutdownStrategy        INFO  Route: route3 shutdown complete, was consuming from: Endpoint[jms://queue:awaitConsuming?disableReplyTo=true]
 [                      Thread-7] DefaultShutdownStrategy        INFO  Graceful shutdown of 3 routes completed in 0 seconds
 [         NioDatagramAcceptor-1] DefaultExceptionMonitor        WARN  Unexpected exception.
 java.lang.InterruptedException
-	at java.util.concurrent.locks.AbstractQueuedSynchronizer.acquireSharedInterruptibly(Unknown Source)
-	at java.util.concurrent.Semaphore.acquire(Unknown Source)
+	at java.util.concurrent.locks.AbstractQueuedSynchronizer.acquireSharedInterruptibly(AbstractQueuedSynchronizer.java:1302)
+	at java.util.concurrent.Semaphore.acquire(Semaphore.java:312)
 	at org.apache.mina.transport.socket.nio.NioDatagramAcceptor$Acceptor.run(NioDatagramAcceptor.java:168)
 	at org.apache.mina.util.NamePreservingRunnable.run(NamePreservingRunnable.java:64)
-	at java.util.concurrent.ThreadPoolExecutor.runWorker(Unknown Source)
-	at java.util.concurrent.ThreadPoolExecutor$Worker.run(Unknown Source)
-	at java.lang.Thread.run(Unknown Source)
-[         ActiveMQ ShutdownHook] BrokerService                  INFO  Apache ActiveMQ 5.14.1 (localhost, ID:Venus-61917-1479733410557-0:1) uptime 1 hour 39 minutes
-[         ActiveMQ ShutdownHook] BrokerService                  INFO  Apache ActiveMQ 5.14.1 (localhost, ID:Venus-61917-1479733410557-0:1) is shutdown
+	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1142)
+	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:617)
+	at java.lang.Thread.run(Thread.java:745)
+[         ActiveMQ ShutdownHook] BrokerService                  INFO  Apache ActiveMQ 5.14.1 (localhost, ID:wolfganchlauch2.speedportneo09012801000249-59173-1479916889905-0:1) uptime 9 minutes
+[         ActiveMQ ShutdownHook] BrokerService                  INFO  Apache ActiveMQ 5.14.1 (localhost, ID:wolfganchlauch2.speedportneo09012801000249-59173-1479916889905-0:1) is shutdown
 [                      Thread-7] MainLifecycleStrategy          INFO  CamelContext: camel-1 has been shutdown, triggering shutdown of the JVM.
-[                      Thread-7] DefaultCamelContext            INFO  Apache Camel 2.17.3 (CamelContext: camel-1) uptime 1 hour 39 minutes
-[                      Thread-7] DefaultCamelContext            INFO  Apache Camel 2.17.3 (CamelContext: camel-1) is shutdown in 2.266 seconds
+[                      Thread-7] DefaultCamelContext            INFO  Apache Camel 2.17.3 (CamelContext: camel-1) uptime 9 minutes
+[                      Thread-7] DefaultCamelContext            INFO  Apache Camel 2.17.3 (CamelContext: camel-1) is shutdown in 2.046 seconds
