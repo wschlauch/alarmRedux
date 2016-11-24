@@ -48,7 +48,7 @@ CREATE TABLE IF NOT EXISTS patient_standard_values (
 	PatID int,
 	parameters map<text, frozen <tuple<float,float>>>,
 	current boolean,
-	PRIMARY KEY (PatId, receivedTime)
+	PRIMARY KEY (PatId, sendTime)
 );
 
 CREATE TABLE IF NOT EXISTS patient_bed_station (
