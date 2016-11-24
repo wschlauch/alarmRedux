@@ -63,6 +63,8 @@ CREATE TABLE IF NOT EXISTS patient_bed_station (
 CREATE TABLE IF NOT EXISTS error_log (
 	msgctrlid text,
 	patid int,
+	errortype text,
+	errorcause text,
 	receivedTime bigint,
 	sendTime bigint,
 	msg text,

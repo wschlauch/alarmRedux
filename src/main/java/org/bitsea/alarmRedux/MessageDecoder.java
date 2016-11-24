@@ -14,6 +14,7 @@ import ca.uhn.hl7v2.util.Terser;
 public class MessageDecoder {
 	
 	private static Terser terser;
+	private static Message msg;
 	
 	MessageDecoder(Exchange ex) {
 		Message msg = ex.getIn().getBody(Message.class);
@@ -35,6 +36,10 @@ public class MessageDecoder {
 		return time;
 	}
 	
+	
+	public String getMsg() {
+		return msg.toString();
+	}
 	
 	public String getMsgId() throws HL7Exception {
 		return terser.get("/.MSH-10");

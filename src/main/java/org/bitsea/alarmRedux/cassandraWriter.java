@@ -22,11 +22,13 @@ import com.datastax.driver.core.Session;
 import com.datastax.driver.core.Statement;
 import com.datastax.driver.core.TupleType;
 import com.datastax.driver.core.TupleValue;
+import com.datastax.driver.core.exceptions.QueryValidationException;
 import com.datastax.driver.core.querybuilder.Insert;
 import com.datastax.driver.core.querybuilder.QueryBuilder;
 
 
 import ca.uhn.hl7v2.HL7Exception;
+import io.netty.handler.timeout.WriteTimeoutException;
 import io.netty.util.internal.ThreadLocalRandom;
 
 import org.bitsea.alarmRedux.MessageDecoder;
@@ -127,8 +129,8 @@ public class cassandraWriter {
 		.value("bedLocation",  srbInfo);
 		insert.value("receivedTime", System.currentTimeMillis());
 		insert.value("sendTime", timeSent);
-		
-		session.executeAsync(insert);
+		processStatement(insert, mdecode);
+		//session.executeAsync(insert);
 		
 		Insert bedInformation = QueryBuilder.insertInto("patient_bed_station")
 				.value("bedInformation", general.get("bedInformation"))
@@ -137,7 +139,8 @@ public class cassandraWriter {
 		bedInformation.value("roomNr", general.get("roomInformation"));
 		bedInformation.value("receivedTime", System.currentTimeMillis());
 		bedInformation.value("sendTime", timeSent);
-		session.executeAsync(bedInformation);
+		//session.executeAsync(bedInformation);
+		processStatement(bedInformation, mdecode);
 	}
 	
 	
@@ -168,7 +171,8 @@ public class cassandraWriter {
 		changeADTInfo.setInt("p", patID);
 		changeADTInfo.setLong("time", mdecode.transformMSHTime());
 		
-		session.executeAsync(changeADTInfo);
+		//session.executeAsync(changeADTInfo);
+		processStatement(changeADTInfo, mdecode);
 		
 		// remove patient from bed and set bed free (i.e., delete the patient)
 		Statement deleteBedInfo = QueryBuilder.delete().from("patient_bed_station")
@@ -176,8 +180,8 @@ public class cassandraWriter {
 				.and(QueryBuilder.eq("roomNr", room))
 				.and(QueryBuilder.eq("station", station))
 				.and(QueryBuilder.eq("PatID", patID));
-		session.execute(deleteBedInfo);
-
+		//session.execute(deleteBedInfo);
+		processStatement(deleteBedInfo, mdecode);
 		
 	}
 	
@@ -209,7 +213,8 @@ public class cassandraWriter {
 		bs.setInt("p", PatID);
 		bs.setLong("sendAt", msg_content.getOBRTime());
 		bs.setLong("time", System.currentTimeMillis());
-		session.executeAsync(bs);
+		//session.executeAsync(bs);
+		processStatement(bs, msg_content);
 	}
 
 	
@@ -352,7 +357,7 @@ public class cassandraWriter {
 			changeOld.setInt("PatID", PatID);
 			changeOld.setLong("ttime", oldTimestamp);
 			session.execute(changeOld);
-			
+
 			// and insert new ones
 			BoundStatement bs = new BoundStatement(psCache.get("updatePatientStandardValues"));
 			bs.setMap("para", newMapping);
@@ -465,8 +470,8 @@ public class cassandraWriter {
 		insert.setLong("send", mdecode.getOBRTime());
 		insert.setString("bed", general.get("stationInformation") + "^" + general.get("roomInformation") + "^" + general.get("bedInformation"));
 		
- 		session.executeAsync(insert);
-		
+ 		//session.executeAsync(insert);
+		processStatement(insert, mdecode);
 		// check whether person has a bed? or even more simple, make an upsert
  		
  		Statement patInfo = QueryBuilder.insertInto("patient_bed_station")
@@ -476,10 +481,27 @@ public class cassandraWriter {
  				.value("station", general.get("stationInformation"))
  				.value("time", mdecode.getOBRTime());
  		
- 		session.executeAsync(patInfo);
+ 		processStatement(patInfo, mdecode);
 
  		if (alarmCheck) {
 			processAsAlarm(general.get("msgctrlid"), pID2, mdecode, i);
+		}
+	}
+
+
+	public void patchThrough(Exchange exchange) throws Exception {
+		CassandraExceptionHandler.QVExceptionHandling("Bad message",
+				new MessageDecoder(exchange), session);
+	}
+ 	
+	
+	private void processStatement(Statement stmt, MessageDecoder mc) throws HL7Exception, NullPointerException, ParseException {
+		try {
+			session.executeAsync(stmt);
+		} catch (QueryValidationException e) {
+			CassandraExceptionHandler.QVExceptionHandling(e.toString(), mc, session);
+		} catch (WriteTimeoutException e) {
+			CassandraExceptionHandler.WTExceptionHandling(e.toString(), mc, session);
 		}
 	}
 }
