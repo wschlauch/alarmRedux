@@ -1,6 +1,8 @@
 package org.bitsea.alarmRedux.routes.in;
 
 
+import org.apache.camel.Exchange;
+import org.apache.camel.Processor;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.hl7.HL7DataFormat;
 import org.apache.camel.spi.DataFormat;
@@ -14,7 +16,8 @@ public class InboundRouteBuilder2 extends RouteBuilder {
 	public void configure() throws Exception {
 		DataFormat hl7 = new HL7DataFormat();
 		from("mina2:udp://" + System.getProperty("MINAHOST") + ":" + System.getProperty("PORT") + "?sync=false&codec=#hl7codec")
-		    .to("jms:queue:awaitConsuming?disableReplyTo=true").unmarshal().hl7(false)
+		    .to("jms:queue:awaitConsuming?disableReplyTo=true")//.unmarshal().hl7(false)
+		    
 		.end();
 		
 		from("mina2:tcp://" + System.getProperty("MINAHOST") + ":" + System.getProperty("ADTPORT") + "?sync=true&codec=#hl7codec")

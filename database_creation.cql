@@ -62,11 +62,10 @@ CREATE TABLE IF NOT EXISTS patient_bed_station (
 
 CREATE TABLE IF NOT EXISTS error_log (
 	msgctrlid text,
-	patid int,
 	errortype text,
-	errorcause text,
+	error_msg text,
 	receivedTime bigint,
+	sent_content text,
 	sendTime bigint,
-	msg text,
-	PRIMARY KEY (patid, msgctrlid)
+	PRIMARY KEY (msgctrlid)
 );

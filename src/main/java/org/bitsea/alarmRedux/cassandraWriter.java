@@ -41,9 +41,7 @@ public class cassandraWriter {
 	HashMap<String, PreparedStatement> psCache = new HashMap<String, PreparedStatement>();
 	
 	
-	public cassandraWriter() {
-		
-	}
+	public cassandraWriter() {}
 	
 	
 	private void connectToSession() {
@@ -490,8 +488,10 @@ public class cassandraWriter {
 
 
 	public void patchThrough(Exchange exchange) throws Exception {
-		CassandraExceptionHandler.QVExceptionHandling("Bad message",
-				new MessageDecoder(exchange), session);
+		CassandraExceptionHandler.TExceptionHandling("Bad message",
+				exchange, session);
+		exchange.getIn().setBody(null);
+		exchange.getOut().setBody(null);
 	}
  	
 	
