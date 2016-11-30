@@ -69,3 +69,9 @@ CREATE TABLE IF NOT EXISTS error_log (
 	sendTime bigint,
 	PRIMARY KEY (msgctrlid)
 );
+
+CREATE TABLE IF NOT EXISTS station_name (
+	stationID int,
+	stationName text,
+	PRIMARY KEY (stationID)
+);

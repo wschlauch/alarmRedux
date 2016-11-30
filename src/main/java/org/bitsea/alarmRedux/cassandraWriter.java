@@ -139,6 +139,14 @@ public class cassandraWriter {
 		bedInformation.value("sendTime", timeSent);
 		//session.executeAsync(bedInformation);
 		processStatement(bedInformation, mdecode);
+		
+		// check whether station has already an ID - if not, insert a new id to the DB
+		// to have no problem later on when querying the DB
+		// currently using
+		Insert stmt = QueryBuilder.insertInto("station_name").ifNotExists()
+				.value("stationName", general.get("stationInformation"))
+				.value("stationID", ThreadLocalRandom.current().nextInt(1, 999999));
+		session.execute(stmt);
 	}
 	
 	
@@ -403,6 +411,11 @@ public class cassandraWriter {
 						.value("time",  mdecode.getOBRTime())
 						.value("patid", tmp);
 				session.executeAsync(bedInsert);
+				
+				Insert stmt = QueryBuilder.insertInto("station_name").ifNotExists()
+						.value("stationName", general.get("stationInformation"))
+						.value("stationID", ThreadLocalRandom.current().nextInt(1, 999999));
+				session.execute(stmt);
 			}
 		}
 		
