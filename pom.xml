@@ -37,12 +37,12 @@ http://maven.apache.org/maven-v4_0_0.xsd">
             <artifactId>camel-spring</artifactId>
             <version>${camel.version}</version>
         </dependency>
- <!--        <dependency>
+        <dependency>
              <groupId>org.apache.camel</groupId>
             <artifactId>camel-mina2</artifactId>
             <version>${camel.version}</version>
         </dependency>
--->
+
         <dependency>
             <groupId>org.apache.camel</groupId>
             <artifactId>camel-test</artifactId>

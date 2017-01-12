@@ -75,3 +75,5 @@ CREATE TABLE IF NOT EXISTS station_name (
 	stationName text,
 	PRIMARY KEY (stationID)
 );
+
+CREATE INDEX ON patient_bed_station (station);
