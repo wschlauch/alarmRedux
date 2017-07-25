@@ -9,7 +9,7 @@ http://maven.apache.org/maven-v4_0_0.xsd">
     <version>1.0</version>
  
   <properties>
-        <camel.version>2.17.3</camel.version>
+        <camel.version>2.18.1</camel.version>
         <hapi.version.stable>2.2</hapi.version.stable>
         <activemq.version>5.14.1</activemq.version>
         <xbean.version>4.5</xbean.version>
@@ -27,17 +27,12 @@ http://maven.apache.org/maven-v4_0_0.xsd">
             <artifactId>camel-core</artifactId>
             <version>${camel.version}</version>
         </dependency>
-        <dependency>
-    		<groupId>org.apache.camel</groupId>
-    		<artifactId>camel-netty4</artifactId>
-    		<version>${camel.version}</version>
-    	</dependency>
-        <dependency>
+<!--         <dependency>
             <groupId>org.apache.camel</groupId>
             <artifactId>camel-spring</artifactId>
             <version>${camel.version}</version>
         </dependency>
-        <dependency>
+-->        <dependency>
              <groupId>org.apache.camel</groupId>
             <artifactId>camel-mina2</artifactId>
             <version>${camel.version}</version>
@@ -110,14 +105,19 @@ http://maven.apache.org/maven-v4_0_0.xsd">
             <artifactId>junit</artifactId>
             <version>4.10</version>
         </dependency>
-        
+        <dependency>
+    <groupId>org.apache.camel</groupId>
+    <artifactId>camel-netty4</artifactId>
+    <version>${camel.version}</version>
+    <!-- use the same version as your Camel core version -->
+</dependency>
 	<!-- Cassandra -->
 	<dependency>
   <groupId>com.datastax.cassandra</groupId>
   <artifactId>cassandra-driver-core</artifactId>
   <version>3.1.0</version>
 </dependency>
-	 <dependency>
+<!--  	 <dependency>
   <groupId>com.datastax.cassandra</groupId>
   <artifactId>cassandra-driver-extras</artifactId>
   <version>3.1.0</version>
@@ -127,12 +127,7 @@ http://maven.apache.org/maven-v4_0_0.xsd">
   <artifactId>cassandra-driver-mapping</artifactId>
   <version>3.1.0</version>
 </dependency>
-<!-- <dependency>
-   		 <groupId>com.github.oscerd</groupId>
-    		<artifactId>camel-cassandra</artifactId>
-   		 <version>2.17.2</version>
-		</dependency> 
--->    </dependencies>
+-->   </dependencies>
 
     <build>
         <defaultGoal>install</defaultGoal>

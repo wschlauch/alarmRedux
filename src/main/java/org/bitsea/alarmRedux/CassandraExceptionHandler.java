@@ -4,13 +4,16 @@ import java.text.ParseException;
 import java.util.HashMap;
 
 import org.apache.camel.Exchange;
+import org.springframework.stereotype.Component;
 
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.querybuilder.Insert;
 import com.datastax.driver.core.querybuilder.QueryBuilder;
 
 import ca.uhn.hl7v2.HL7Exception;
+import io.netty.util.internal.ThreadLocalRandom;
 
+@Component
 public class CassandraExceptionHandler {
 
 	 /*
@@ -46,7 +49,7 @@ public class CassandraExceptionHandler {
 						.eq("station", mi.get("stationInformation"))).and(QueryBuilder
 						.eq("bedNr", mi.get("bedInformation")))).one().getInt("patid");
 		long time = exc.getOBRTime();
-//		stmt.value("patid", patid);
+
 		stmt.value("msgctrlid", mi.get("msgctrlid"));
 		stmt.value("errortype", typeOfError);
 		stmt.value("error_msg", message);
@@ -59,16 +62,15 @@ public class CassandraExceptionHandler {
 	// when a transmission error occurred
 	public static void TExceptionHandling(String cause, Exchange message, Session s) {
 		Insert stmt = QueryBuilder.insertInto("error_log");
-		
 		String typeOfError = "Transmission error";
-		String completeMsg = message.getIn().getBody(String.class);
-//		int patId = -1;
+		String completeMsg = message.getIn().getBody().toString();
 		String[] splitMsg = completeMsg.split("\r");
-		String msgCtrlId = splitMsg[0].split("\\|")[9];
+		String msgCtrlId = "";
+		msgCtrlId = splitMsg[0].split("\\|").length > 0 ? splitMsg[0].split("\\|")[9] : "" + ThreadLocalRandom.current().nextInt(1000, 100000000);
 		String errorMsg = "This type of message has not been implemented yet.";
 		long time = splitMsg[1].length() == 2 ? Long.parseLong(splitMsg[1].split("|")[1]) : System.currentTimeMillis();
 		
-//		stmt.value("patid", patId);
+	//		stmt.value("patid", patId);
 		stmt.value("msgctrlid", msgCtrlId);
 		stmt.value("errortype", typeOfError);
 		stmt.value("error_msg", errorMsg);
@@ -76,6 +78,54 @@ public class CassandraExceptionHandler {
 		stmt.value("receivedTime", System.currentTimeMillis());
 		stmt.value("sendTime", time);
 		s.executeAsync(stmt);
+	}
+
+	
+	/*
+	 * message received that had no MSH line
+	 * write out details that are given, set empty/random values for rest of message
+	 */
+	public static void HExceptionHandling(String string, Exchange exchange, Session session) {
+		String msgctrlid = "" + ThreadLocalRandom.current().nextInt(1000, 10000);
+		Throwable caused = exchange.getProperty(Exchange.EXCEPTION_CAUGHT, Throwable.class);
+		String errortype = caused.toString();
+		String error_msg = caused.getMessage();
+		String content = exchange.getIn().getBody().toString();
+
+		Insert stmt = QueryBuilder.insertInto("error_log");
+		stmt.value("msgCtrlId", msgctrlid);
+		stmt.value("errortype", errortype);
+		stmt.value("error_msg", error_msg);
+		stmt.value("sent_content", content);
+		stmt.value("receivedTime", System.currentTimeMillis());
+		stmt.value("sendTime", System.currentTimeMillis());
+		session.executeAsync(stmt);
+	}
+	
+	public static void weirdException(Exchange exchange, Session s) {
+		String msgctrlid = "" + ThreadLocalRandom.current().nextInt(1000, 10000);
+		String errortype = "Strange Error";
+		String error_msg = "Cannot be helped";
+		String content = "";
+		try {
+			content = exchange.getIn().getBody().toString();
+		} catch (Exception q) {
+			content = "No content";
+		}
+		Insert stmt = QueryBuilder.insertInto("error_log");
+		stmt.value("msgCtrlId", msgctrlid);
+		stmt.value("errortype", errortype);
+		stmt.value("error_msg", error_msg);
+		stmt.value("sent_content", content);
+		stmt.value("receivedTime", System.currentTimeMillis());
+		stmt.value("sendTime", System.currentTimeMillis());
+		s.executeAsync(stmt);
+	}
+
+	public static void badMessage(Exchange ex, Session session) {
+		System.out.println("YAAAA");
 
 	}
+
+
 }

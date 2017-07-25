@@ -16,9 +16,15 @@ public class MessageDecoder {
 	private static Terser terser;
 	private static Message msg;
 	
-	MessageDecoder(Exchange ex) {
-		Message msg = ex.getIn().getBody(Message.class);
-		terser = new Terser(msg);
+	public MessageDecoder(Exchange ex) {
+		this.msg = ex.getIn().getBody(Message.class);
+		this.terser = new Terser(msg);
+	}
+	
+	
+	public MessageDecoder(Message m) {
+		this.msg = m;
+		this.terser = new Terser(msg);
 	}
 	
 	
@@ -45,14 +51,26 @@ public class MessageDecoder {
 		return terser.get("/.MSH-10");
 	}
 	
+	public String getMonitorAlarmId() throws HL7Exception {
+		return terser.get("/.MSH-3");
+	}
 	
+		
 	public String getBed() throws HL7Exception {
-		return terser.get("/.PV1-3-3");		
+		String bed = terser.get("/.PV1-3-3");
+		if (bed.isEmpty() || bed == "null") {
+			bed = terser.get("/.PV1-3-1");
+		}
+		return bed;
 	}
 	
 	
 	public String getRoom() throws HL7Exception {
-		return terser.get("/.PV1-3-2");
+		String room = terser.get("/.PV1-3-2");
+		if (room == null) {
+			room = "null";
+		}
+		return room;
 	}
 	
 	
@@ -62,22 +80,45 @@ public class MessageDecoder {
 	
 	
 	public String getPatientID() throws HL7Exception {
-		return terser.get("/.PID-3-1");
+		String pid = null;
+		try {
+			pid = terser.get("/.PID-3-1");
+			try {
+				int t = Integer.parseInt(pid);
+			} catch (NumberFormatException e) {
+				pid = null;
+			}
+		} catch (Exception e) {
+			// pass
+		}
+		return pid;
 	}
 	
 	
 	public String getObsText(int i) throws HL7Exception {
-		return terser.get("/.OBSERVATION(" + i + ")/OBX-3-2");
+		String content = terser.get("/.OBSERVATION(" + i + ")/OBX-3-2");
+		if (content.isEmpty() || content == null) {
+			content = "null";
+		}
+		return content;
 	}
 	
 	
 	public String getObsIdentifier(int i) throws HL7Exception {
-		return terser.get("/.OBSERVATION(" + i + ")/OBX-3-1");
+		String content = terser.get("/.OBSERVATION(" + i + ")/OBX-3-1");
+		if (content.isEmpty() || content == null) {
+			content = "null";
+		} 
+		return content;
 	}
 	
 	
 	public String getObsCoding(int i) throws HL7Exception {
-		return terser.get("/.OBSERVATION(" + i + ")/OBX-3-3");
+		String content = terser.get("/.OBSERVATION(" + i + ")/OBX-3-3");
+		if (content.isEmpty() || content == null) {
+			content = "null";
+		}
+		return content;
 	}
 	
 	
@@ -85,6 +126,9 @@ public class MessageDecoder {
 		return terser.get("/.OBSERVATION(" + i + ")/OBX-2");
 	}
 	
+	public String getObsAlarmingDevice(int i) throws HL7Exception {
+		return terser.get("/.OBSERVATION(" + i  + ")/OBX-4");
+	}
 	
 	public Float getObsValueFlt(int i) throws HL7Exception {
 		return Float.parseFloat(terser.get("/.OBSERVATION(" + i + ")/OBX-5"));
@@ -97,17 +141,62 @@ public class MessageDecoder {
 	
 	
 	public String getBorderString(int i) throws HL7Exception {
-		return terser.get("/.OBSERVATION(" + i + ")/OBX-7");
+		String answer = "";
+		try {
+			answer = terser.get("/.OBSERVATION(" + i + ")/OBX-7");
+		} catch (HL7Exception e) {
+			// pass
+		}
+		if (answer == null) {
+			answer = "-100-100";
+		}
+		return answer;
+	}
+	
+	public long getObsTime(int i) throws HL7Exception, ParseException {
+		String timeTest = terser.get("/.OBSERVATION(" + i + ")/OBX-14");
+		SimpleDateFormat format = new SimpleDateFormat("yyyyMMddHHmmss");
+		long time;
+		if (!timeTest.isEmpty() && timeTest != null) {
+			Date date = format.parse(timeTest);
+			time = date.getTime();
+		} else {
+			time = transformMSHTime();
+		} 
+		return time;
 	}
 	
 	
 	public String getObsUnit(int i) throws HL7Exception {
-		String first = terser.get("/.OBSERVATION(" + i + ")/OBX-6");
-		String second = terser.get("/.OBSERVATION(" + i + ")/OBX-6-2");
-		String third = terser.get("/.OBSERVATION(" + i + ")/OBX-6-3");
-		return first + "^" + second + "^" + third;
+		String first="";
+		String second="";
+		String third = "";
+		try {
+			first = terser.get("/.OBSERVATION(" + i + ")/OBX-6-1");
+		} catch (HL7Exception e) {}
+		try {
+			second = terser.get("/.OBSERVATION(" + i + ")/OBX-6-2");
+		} catch (HL7Exception lam) {}
+		try {
+			third = terser.get("/.OBSERVATION(" + i + ")/OBX-6-3");
+		} catch (HL7Exception e) {}
+		if (first == null) {
+			first = "null";
+		} 
+		if (second == null) {
+			second = "null";
+		}
+		if (third == null) {
+			third = "null";
+		}
+		return !(second.isEmpty() || second == null) ? second  : first;
 	}
 	
+	
+	public String getObsMsgTxt(int i) throws HL7Exception {
+		String first = terser.get("/.OBSERVATION(" + i + ")/OBX-5");
+		return first;
+	}
 	
 	public HashMap<String, String> generalInformation() throws HL7Exception {
 		HashMap<String, String> information = new HashMap<String, String>();
@@ -161,5 +250,6 @@ public class MessageDecoder {
 	
 	public String getDateOfBirth() throws HL7Exception {
 		return terser.get("/.PID-7");
-	}
+	}	
+	
 }

@@ -36,7 +36,8 @@ public class TestListener extends CamelTestSupport {
     }
 
    
-    protected JndiRegistry createRegistry() throws Exception {
+    @Override
+	protected JndiRegistry createRegistry() throws Exception {
         JndiRegistry jndi = super.createRegistry();
         jndi.bind("hl7codec", new HL7MLLPCodec());
         return jndi;
