@@ -31,9 +31,7 @@ public class OutboundRouteBuilder extends RouteBuilder {
 		Predicate p22 = header("CamelHL7TriggerEvent").isEqualTo("R01");
 		Predicate isORU = PredicateBuilder.or(p21, p22);
 				
-		DataFormat hl7 = new HL7DataFormat();
-		
-		
+		HL7DataFormat hl7 = new HL7DataFormat();
 	
 		from("jms:queue:awaitConsuming?disableReplyTo=true")
 		.doTry().unmarshal().hl7(false)
@@ -54,12 +52,7 @@ public class OutboundRouteBuilder extends RouteBuilder {
 			.end()
 			.marshal().hl7(false)
 		.endDoTry()
-		.doCatch(Exception.class).process(new Processor() {
-			public void process(Exchange ex) {
-				ex.getIn().setBody(null);
-				ex.getOut().setBody(null);
-			}
-		}).handled(true).to("bean:cassandraWriter?method=notDecodedMessage")
+		.doCatch(Exception.class).handled(true).to("bean:cassandraWriter?method=notDecodedMessage")
 //		.doCatch(NoTypeConversionAvailableException.class, IllegalStateException.class)
 //			.to("bean:cassandraWriter?method=withoutHeader")
 //		.doCatch(Exception.class)

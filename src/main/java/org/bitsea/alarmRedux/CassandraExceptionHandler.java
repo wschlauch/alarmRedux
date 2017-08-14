@@ -11,6 +11,7 @@ import com.datastax.driver.core.querybuilder.Insert;
 import com.datastax.driver.core.querybuilder.QueryBuilder;
 
 import ca.uhn.hl7v2.HL7Exception;
+import ca.uhn.hl7v2.model.Message;
 import io.netty.util.internal.ThreadLocalRandom;
 
 @Component
@@ -123,7 +124,9 @@ public class CassandraExceptionHandler {
 	}
 
 	public static void badMessage(Exchange ex, Session session) {
-		System.out.println("YAAAA");
+		System.out.println("Some message went wrong\nattempting to print message");
+		String m = ex.getIn().getBody(String.class);
+		System.out.println(m);
 
 	}
 

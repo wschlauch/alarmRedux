@@ -9,7 +9,7 @@ http://maven.apache.org/maven-v4_0_0.xsd">
     <version>1.0</version>
  
   <properties>
-        <camel.version>2.18.1</camel.version>
+        <camel.version>2.19.1</camel.version>
         <hapi.version.stable>2.2</hapi.version.stable>
         <activemq.version>5.14.1</activemq.version>
         <xbean.version>4.5</xbean.version>
@@ -21,23 +21,27 @@ http://maven.apache.org/maven-v4_0_0.xsd">
     <artifactId>commons-cli</artifactId>
     <version>1.2</version>
 </dependency>
+<dependency>
+	<groupId>org.apache.camel</groupId>
+	<artifactId>camel-jdbc</artifactId>
+	<version>${camel.version}</version>
+</dependency>
         <!-- CAMEL -->
         <dependency>
             <groupId>org.apache.camel</groupId>
             <artifactId>camel-core</artifactId>
             <version>${camel.version}</version>
         </dependency>
-<!--         <dependency>
-            <groupId>org.apache.camel</groupId>
-            <artifactId>camel-spring</artifactId>
-            <version>${camel.version}</version>
+        <dependency>
+        	<groupId>commons-dbcp</groupId>
+        	<artifactId>commons-dbcp</artifactId>
+        	<version>1.4</version>
         </dependency>
--->        <dependency>
-             <groupId>org.apache.camel</groupId>
-            <artifactId>camel-mina2</artifactId>
-            <version>${camel.version}</version>
-        </dependency>
-
+	<dependency>
+		<groupId>org.apache.camel</groupId>
+		<artifactId>camel-netty4</artifactId>
+		<version>${camel.version}</version>
+	</dependency>
         <dependency>
             <groupId>org.apache.camel</groupId>
             <artifactId>camel-test</artifactId>
@@ -66,12 +70,7 @@ http://maven.apache.org/maven-v4_0_0.xsd">
 			<artifactId>activemq-all</artifactId>
 			<version>${activemq.version}</version>
 		</dependency>
-	    <dependency>
-      		<groupId>org.apache.xbean</groupId>
-       		<artifactId>xbean-spring</artifactId>
-       		<version>${xbean.version}</version>
-    	</dependency>
-  
+	
         <!-- HAPI -->
         <dependency>
             <groupId>ca.uhn.hapi</groupId>
@@ -80,12 +79,12 @@ http://maven.apache.org/maven-v4_0_0.xsd">
         </dependency>
         <dependency>
             <groupId>ca.uhn.hapi</groupId>
-            <artifactId>hapi-structures-v25</artifactId>
+            <artifactId>hapi-structures-v23</artifactId>
             <version>${hapi.version.stable}</version>
         </dependency>
         <dependency>
             <groupId>ca.uhn.hapi</groupId>
-            <artifactId>hapi-structures-v23</artifactId>
+            <artifactId>hapi-structures-v25</artifactId>
             <version>${hapi.version.stable}</version>
         </dependency>
 
@@ -105,29 +104,14 @@ http://maven.apache.org/maven-v4_0_0.xsd">
             <artifactId>junit</artifactId>
             <version>4.10</version>
         </dependency>
-        <dependency>
-    <groupId>org.apache.camel</groupId>
-    <artifactId>camel-netty4</artifactId>
-    <version>${camel.version}</version>
-    <!-- use the same version as your Camel core version -->
-</dependency>
+    
 	<!-- Cassandra -->
 	<dependency>
   <groupId>com.datastax.cassandra</groupId>
   <artifactId>cassandra-driver-core</artifactId>
   <version>3.1.0</version>
 </dependency>
-<!--  	 <dependency>
-  <groupId>com.datastax.cassandra</groupId>
-  <artifactId>cassandra-driver-extras</artifactId>
-  <version>3.1.0</version>
-</dependency> 
-<dependency>
-  <groupId>com.datastax.cassandra</groupId>
-  <artifactId>cassandra-driver-mapping</artifactId>
-  <version>3.1.0</version>
-</dependency>
--->   </dependencies>
+</dependencies>
 
     <build>
         <defaultGoal>install</defaultGoal>
