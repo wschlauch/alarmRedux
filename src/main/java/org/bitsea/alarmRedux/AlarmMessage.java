@@ -2,10 +2,7 @@ package org.bitsea.alarmRedux;
 
 import java.text.ParseException;
 import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -28,7 +25,7 @@ public class AlarmMessage {
 	static HashMap<String, PreparedStatement> psCache = new HashMap<String, PreparedStatement>();
 
 	public AlarmMessage(Session q) {
-		this.session = q;
+		session = q;
 		
 		PreparedStatement ps_insertAlarm = session.prepare(QueryBuilder.insertInto("alarm_messages")
 				.value("PatID", QueryBuilder.bindMarker("PatID")) 

@@ -26,7 +26,6 @@ import io.netty.util.internal.ThreadLocalRandom;
 
 import org.bitsea.alarmRedux.MessageDecoder;
 
-
 @Component
 public class cassandraWriter {
 	Cluster cluster;
@@ -76,69 +75,6 @@ public class cassandraWriter {
 
 	}
 	
-	
-
-	
-	
-//	public void processAsAlarm(String MesID, int PatID, MessageDecoder msg_content, int nrOBX) throws HL7Exception, ParseException {
-//		List<String> alarmReasons = new LinkedList<String>();
-//		HashMap<String, Integer> severness = new HashMap<String, Integer>();
-//		boolean looping = true;
-//		int i = 0;
-//		while (looping) {
-//			try {
-//				String ending = msg_content.getObsCoding(i);
-//				if (ending.toLowerCase().contains("alert")) {
-//					String name = msg_content.getObsText(i);
-//					String value = msg_content.getObsValueStr(i);
-//					alarmReasons.add(value);
-//					severness.put(name, severness.getOrDefault(name, 0) + 1);
-//				}
-//				i++;
-//			} catch (Exception e) {
-//				looping = false;
-//			}
-//		}
-//		
-//		BoundStatement bs = new BoundStatement(psCache.get("insertAlarm"));
-//		bs.setString("m", MesID);
-//		bs.setList("r", alarmReasons);
-//		bs.setMap("s", severness);
-//		bs.setInt("p", PatID);
-//		bs.setLong("sendAt", msg_content.getOBRTime());
-//		bs.setLong("time", System.currentTimeMillis());
-//		//session.executeAsync(bs);
-//		DBWriter.processStatement(bs, msg_content);
-//	}
-
-/*	public void processAsAlarmNew(String MesID, int PatID, MessageDecoder msg_content, int nrOBX) throws HL7Exception, ParseException {
-		boolean looping = true;
-		int i = 0;
-		while (looping) {
-			try {
-				String ending = msg_content.getObsCoding(i);
-				if (ending.toLowerCase().contains("alert")) {
-					String name = msg_content.getObsText(i);
-					String value = msg_content.getObsValueStr(i);
-
-
-				}
-				i++;
-			} catch (Exception e) {
-				looping = false;
-			}
-		}
-		
-		//session.executeAsync(bs);
-		BoundStatement bs = new BoundStatement(psCache.get("insertAlarm"));
-		bs.setString("m", MesID);
-		
-		bs.setInt("p", PatID);
-		bs.setLong("sendAt", msg_content.getOBRTime());
-		bs.setLong("time", System.currentTimeMillis());
-		DBWriter.processStatement(bs, msg_content);
-	}
-	*/
 	
 	private TupleValue parseFromTo(String msg) {
 		// the last index of "-" is where the message (-)a-b is going to be split
@@ -421,9 +357,9 @@ public class cassandraWriter {
  				.value("station", general.get("stationInformation"))
  				.value("time", mdecode.getOBRTime());
  		
- 		DBWriter.processStatement(patInfo, mdecode);
+ 		boolean done = DBWriter.processStatement(patInfo, mdecode);
 
- 		if (alarmCheck) {
+ 		if (done && alarmCheck) {
 			AlarmMessage.processAsAlarm(general.get("msgctrlid"), pID2, mdecode, i);
 		}
 	}
@@ -451,3 +387,66 @@ public class cassandraWriter {
 	}
 	
 }
+
+
+
+
+//public void processAsAlarm(String MesID, int PatID, MessageDecoder msg_content, int nrOBX) throws HL7Exception, ParseException {
+//	List<String> alarmReasons = new LinkedList<String>();
+//	HashMap<String, Integer> severness = new HashMap<String, Integer>();
+//	boolean looping = true;
+//	int i = 0;
+//	while (looping) {
+//		try {
+//			String ending = msg_content.getObsCoding(i);
+//			if (ending.toLowerCase().contains("alert")) {
+//				String name = msg_content.getObsText(i);
+//				String value = msg_content.getObsValueStr(i);
+//				alarmReasons.add(value);
+//				severness.put(name, severness.getOrDefault(name, 0) + 1);
+//			}
+//			i++;
+//		} catch (Exception e) {
+//			looping = false;
+//		}
+//	}
+//	
+//	BoundStatement bs = new BoundStatement(psCache.get("insertAlarm"));
+//	bs.setString("m", MesID);
+//	bs.setList("r", alarmReasons);
+//	bs.setMap("s", severness);
+//	bs.setInt("p", PatID);
+//	bs.setLong("sendAt", msg_content.getOBRTime());
+//	bs.setLong("time", System.currentTimeMillis());
+//	//session.executeAsync(bs);
+//	DBWriter.processStatement(bs, msg_content);
+//}
+
+/*	public void processAsAlarmNew(String MesID, int PatID, MessageDecoder msg_content, int nrOBX) throws HL7Exception, ParseException {
+	boolean looping = true;
+	int i = 0;
+	while (looping) {
+		try {
+			String ending = msg_content.getObsCoding(i);
+			if (ending.toLowerCase().contains("alert")) {
+				String name = msg_content.getObsText(i);
+				String value = msg_content.getObsValueStr(i);
+
+
+			}
+			i++;
+		} catch (Exception e) {
+			looping = false;
+		}
+	}
+	
+	//session.executeAsync(bs);
+	BoundStatement bs = new BoundStatement(psCache.get("insertAlarm"));
+	bs.setString("m", MesID);
+	
+	bs.setInt("p", PatID);
+	bs.setLong("sendAt", msg_content.getOBRTime());
+	bs.setLong("time", System.currentTimeMillis());
+	DBWriter.processStatement(bs, msg_content);
+}
+*/

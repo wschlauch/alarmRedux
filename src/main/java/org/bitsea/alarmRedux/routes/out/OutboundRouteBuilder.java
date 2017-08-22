@@ -1,17 +1,13 @@
 package org.bitsea.alarmRedux.routes.out;
 
 
-import org.apache.camel.Exchange;
+import org.apache.camel.NoTypeConversionAvailableException;
 import org.apache.camel.Predicate;
-import org.apache.camel.Processor;
 import org.apache.camel.builder.PredicateBuilder;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.hl7.HL7DataFormat;
-import org.apache.camel.spi.DataFormat;
 import org.springframework.stereotype.Component;
 
-import ca.uhn.hl7v2.HL7Exception;
-import ca.uhn.hl7v2.model.Message;
 
 @Component
 public class OutboundRouteBuilder extends RouteBuilder {
@@ -30,12 +26,16 @@ public class OutboundRouteBuilder extends RouteBuilder {
 		Predicate p21 = header("CamelHL7MessageType").isEqualTo("ORU");
 		Predicate p22 = header("CamelHL7TriggerEvent").isEqualTo("R01");
 		Predicate isORU = PredicateBuilder.or(p21, p22);
-				
+		Predicate tooShort = header("CamelHL7TriggerEvent").isNull();
+		
 		HL7DataFormat hl7 = new HL7DataFormat();
 	
 		from("jms:queue:awaitConsuming?disableReplyTo=true")
 		.doTry().unmarshal().hl7(false)
 			.choice()
+				.when(tooShort)
+					.to("bean:cassandraWriter?method=patchThrough")
+					.endChoice()
 				.when(isADT)
 					.to("bean:ADTProcessor?method=processADT")
 					.endChoice()
@@ -44,19 +44,18 @@ public class OutboundRouteBuilder extends RouteBuilder {
 					.endChoice()
 				.when(isORU).to("bean:cassandraWriter?method=process")
 					.endChoice()
-				.when(body().isInstanceOf(Message.class))
-					.to("bean:cassandraWriter?method=patchThrough")
-					.endChoice()
+				
 				.otherwise()
-					.to("bean:cassandraWriter?method=notDecodedMessage")
+					.to("bean:cassandraWriter?method=weirdException")
 			.end()
 			.marshal().hl7(false)
 		.endDoTry()
-		.doCatch(Exception.class).handled(true).to("bean:cassandraWriter?method=notDecodedMessage")
-//		.doCatch(NoTypeConversionAvailableException.class, IllegalStateException.class)
-//			.to("bean:cassandraWriter?method=withoutHeader")
-//		.doCatch(Exception.class)
-//			.to("bean:cassandraWriter?method=weirdException")
+		.doCatch(NoTypeConversionAvailableException.class)
+			.to("bean:cassandraWriter?method=withoutHeader")
+		.doCatch(IllegalStateException.class)
+			.to("bean:cassandraWriter?method=withoutHeader")
+		.doCatch(Exception.class)
+			.to("bean:cassandraWriter?method=notDecodedMessage")
 		.endDoTry()
 		.end();
 	}

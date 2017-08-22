@@ -16,7 +16,7 @@ import io.netty.util.internal.ThreadLocalRandom;
 
 public class ADTProcessor {
 
-	static Session session;
+	Session session;
 	HashMap<String, PreparedStatement> psCache = new HashMap<String, PreparedStatement>();
 	
 	public ADTProcessor(Session se) {

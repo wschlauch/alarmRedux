@@ -9,20 +9,21 @@ import org.apache.commons.dbcp.BasicDataSource;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-@Configuration
-public class DBReader {
+public class DBRConnector {
 
-	public DataSource ds;
+	private DataSource ds;
 
-	@Bean
-	public DataSource DBReader(Properties prop) {
+	public void connect(Properties prop) {
 		BasicDataSource ds = new BasicDataSource();
 		ds.setDriverClassName(prop.getProperty("datasource.driverClassName")); // we do this general such that there is no problem for future references
-		ds.setUsername(prop.getProperty("datasource.user"));
+		ds.setUsername(prop.getProperty("datasource.username"));
 		ds.setPassword(prop.getProperty("datasource.password"));
 		ds.setUrl(prop.getProperty("datasource.url"));
 		this.ds = ds;
-		return ds;
+	}
+	
+	public DataSource getDataSource() {
+		return this.ds;
 	}
 	
 }

@@ -11,7 +11,6 @@ import com.datastax.driver.core.querybuilder.Insert;
 import com.datastax.driver.core.querybuilder.QueryBuilder;
 
 import ca.uhn.hl7v2.HL7Exception;
-import ca.uhn.hl7v2.model.Message;
 import io.netty.util.internal.ThreadLocalRandom;
 
 @Component
@@ -35,7 +34,7 @@ public class CassandraExceptionHandler {
 	
 	
 	private static void insertError(String message, MessageDecoder exc, String name, Session s) throws HL7Exception, NullPointerException, ParseException {
-		// got query valditation exception
+		// got query validation exception
 		Insert stmt = QueryBuilder.insertInto("error_log");
 		
 		String typeOfError = name;
@@ -111,7 +110,7 @@ public class CassandraExceptionHandler {
 		try {
 			content = exchange.getIn().getBody().toString();
 		} catch (Exception q) {
-			content = "No content";
+			content = "No content or message not complete";
 		}
 		Insert stmt = QueryBuilder.insertInto("error_log");
 		stmt.value("msgCtrlId", msgctrlid);

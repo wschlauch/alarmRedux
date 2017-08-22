@@ -25,6 +25,9 @@ CREATE TABLE IF NOT EXISTS oru_messages (
 	PRIMARY KEY (patid, sendTime, uid)
 ) with clustering order by (sendTime DESC);
 
+//CREATE INDEX IF NOT EXISTS oru_time ON oru_messages (sendtime);
+//CREATE INDEX IF NOT EXISTS oru_ctrlid ON oru_messages (msgctrlid);
+
 CREATE TABLE IF NOT EXISTS adt_messages (
 	uid uuid,
 	receivedTime bigint,

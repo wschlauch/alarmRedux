@@ -13,14 +13,14 @@ class CassandraConnector {
 	 */
 	public void connect(final String node, final int port, final String keyspace) {
 		this.cluster = Cluster.builder().addContactPoint(node).withPort(port).build();
-		session = cluster.connect(keyspace);
+		this.session = cluster.connect(keyspace);
 	}
 	
 	/* 
 	 * provide Session
 	 */
 	public Session getSession() {
-		return session;
+		return this.session;
 	}
 	
 	/*
